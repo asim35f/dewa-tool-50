@@ -1,0 +1,532 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>DEWA Reports — Tanveer Ahmed Road Contracting</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<style>
+:root{
+  --bg:#0a0e1a;--sur:#111827;--sur2:#1a2235;--bor:#1e2d45;
+  --acc:#00c9a7;--mut:#64748b;--tx:#e2e8f0;
+  --red:#ef4444;--grn:#22c55e;--ylw:#f59e0b;--blu:#3b82f6;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--tx);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;min-height:100vh;padding-bottom:40px}
+
+/* Header */
+.hdr{background:var(--sur);border-bottom:1px solid var(--bor);padding:11px 14px;display:flex;align-items:center;gap:10px;position:sticky;top:0;z-index:100}
+.hdr-logo{width:30px;height:30px;background:linear-gradient(135deg,var(--acc),#3b82f6);border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0}
+.hdr-title{font-size:13px;font-weight:700}
+.hdr-sub{font-size:10px;color:var(--mut);margin-top:1px}
+.hdr-right{margin-left:auto;display:flex;gap:7px;align-items:center}
+.btn-ref{padding:5px 11px;background:rgba(0,201,167,.12);border:1px solid rgba(0,201,167,.4);color:var(--acc);border-radius:7px;cursor:pointer;font-size:11px;font-weight:700}
+#loadStatus{font-size:10px;color:var(--mut)}
+
+/* URL Panel */
+.url-panel{background:var(--sur2);border-bottom:1px solid var(--bor);padding:7px 14px;display:flex;gap:7px;align-items:center;flex-wrap:wrap}
+.url-panel label{font-size:11px;color:var(--mut);white-space:nowrap}
+.url-panel input{flex:1;min-width:160px;background:var(--bg);border:1px solid var(--bor);color:var(--tx);padding:5px 9px;border-radius:6px;font-size:11px;font-family:monospace}
+.url-panel button{padding:5px 11px;background:rgba(0,201,167,.12);border:1px solid rgba(0,201,167,.4);color:var(--acc);border-radius:6px;cursor:pointer;font-size:11px;font-weight:700;white-space:nowrap}
+
+/* Grid layout */
+.page{max-width:1200px;margin:0 auto;padding:12px}
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px}
+@media(max-width:700px){.grid-2{grid-template-columns:1fr}}
+
+/* Card */
+.card{background:var(--sur);border:1px solid var(--bor);border-radius:12px;overflow:hidden;display:flex;flex-direction:column}
+.card-hdr{padding:11px 13px;border-bottom:1px solid var(--bor);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px;flex-shrink:0}
+.card-title{font-size:13px;font-weight:700}
+.card-sub{font-size:10px;color:var(--mut);margin-top:1px}
+.card-nav{display:flex;align-items:center;gap:5px}
+.nav-btn{background:var(--sur2);border:1px solid var(--bor);color:var(--tx);width:25px;height:25px;border-radius:5px;cursor:pointer;font-size:11px;display:flex;align-items:center;justify-content:center}
+.nav-btn:hover{border-color:var(--acc);color:var(--acc)}
+.nav-label{font-size:11px;font-weight:600;min-width:88px;text-align:center}
+
+/* Pills */
+.pills{display:flex;gap:7px;padding:9px 12px;border-bottom:1px solid var(--bor);flex-wrap:wrap;flex-shrink:0}
+.pill{flex:1;min-width:60px;padding:8px;background:var(--sur2);border-radius:7px;text-align:center}
+.pill-val{font-size:20px;font-weight:800;color:var(--grn)}
+.pill-lbl{font-size:9px;color:var(--mut);margin-top:1px}
+.pill-sub{font-size:11px;font-weight:700;color:var(--acc)}
+
+/* Table */
+.tbl-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;flex:1}
+table{width:100%;border-collapse:collapse;font-size:11px}
+thead th{padding:7px 9px;text-align:left;color:var(--mut);font-size:9px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;border-bottom:1px solid var(--bor);white-space:nowrap;background:var(--sur2)}
+th.c{text-align:center}
+th.r{text-align:right}
+tbody tr:hover{background:rgba(255,255,255,.02)}
+tbody td{padding:8px 9px;border-bottom:1px solid rgba(30,45,69,.5);white-space:nowrap}
+td.c{text-align:center;font-size:13px;font-weight:700}
+td.r{text-align:right;font-weight:600}
+td.grn{color:var(--grn)}
+td.red{color:var(--red)}
+
+/* Grand total / tfoot */
+tfoot tr{background:rgba(0,201,167,.05);border-top:2px solid var(--acc)}
+tfoot td{padding:9px 9px;font-size:11px;font-weight:700;white-space:nowrap}
+tfoot td.c{text-align:center;font-size:14px;font-weight:800}
+tfoot td.r{text-align:right;font-size:12px;font-weight:800;color:var(--acc)}
+tfoot td.grn{color:var(--grn);font-size:14px;font-weight:800;text-align:center}
+tfoot td.red{color:var(--red);font-size:14px;font-weight:800;text-align:center}
+
+/* Filters */
+.filters{padding:8px 12px;border-bottom:1px solid var(--bor);display:flex;gap:6px;flex-wrap:wrap;align-items:center;flex-shrink:0}
+.filters label{font-size:10px;color:var(--mut);white-space:nowrap}
+.filters select,.filters input[type=date]{background:var(--sur2);border:1px solid var(--bor);color:var(--tx);padding:4px 7px;border-radius:5px;font-size:10px}
+.filters select{flex:1;min-width:110px}
+.fbtn{padding:4px 10px;background:rgba(0,201,167,.12);border:1px solid rgba(0,201,167,.4);color:var(--acc);border-radius:5px;cursor:pointer;font-size:10px;font-weight:700;white-space:nowrap}
+.fbtn.clr{background:transparent;border-color:var(--mut);color:var(--mut)}
+
+/* Share button */
+.card-foot{padding:8px 12px;border-top:1px solid var(--bor);flex-shrink:0}
+.btn-img{width:100%;padding:7px;background:rgba(37,211,102,.1);border:1px solid rgba(37,211,102,.3);color:#25d366;border-radius:7px;cursor:pointer;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;gap:6px}
+.btn-img:hover{background:rgba(37,211,102,.18)}
+.btn-img.loading{opacity:.6;cursor:wait}
+
+/* Misc */
+.loading-msg{padding:30px;text-align:center;color:var(--mut);font-size:11px}
+.spinner{display:inline-block;width:16px;height:16px;border:2px solid var(--bor);border-top-color:var(--acc);border-radius:50%;animation:spin .7s linear infinite;margin-bottom:6px}
+@keyframes spin{to{transform:rotate(360deg)}}
+.empty{padding:22px;text-align:center;color:var(--mut);font-size:11px}
+.sep-row td{height:2px;background:rgba(0,201,167,.04);padding:0}
+</style>
+</head>
+<body>
+
+<div class="hdr">
+  <div class="hdr-logo">📊</div>
+  <div>
+    <div class="hdr-title">DEWA Reports</div>
+    <div class="hdr-sub">Tanveer Ahmed Road Contracting LLC</div>
+  </div>
+  <div class="hdr-right">
+    <span id="loadStatus"></span>
+    <button class="btn-ref" onclick="loadData()">🔄 Refresh</button>
+  </div>
+</div>
+
+<div class="url-panel">
+  <label>Apps Script URL:</label>
+  <input id="urlInput" type="text" placeholder="Paste your Apps Script URL here…">
+  <button onclick="saveUrl()">Save &amp; Load</button>
+</div>
+
+<div class="page">
+
+  <!-- Today Summary -->
+  <div class="card" id="todayCard" style="margin-bottom:14px">
+    <div class="card-hdr">
+      <div><div class="card-title">🌅 Today's Summary</div><div class="card-sub" id="todayDateLbl">—</div></div>
+    </div>
+    <div id="todayPills" class="pills" style="display:none"></div>
+    <div class="tbl-wrap"><div id="todayTable"><div class="loading-msg"><div class="spinner"></div><br>Loading…</div></div></div>
+    <div class="card-foot"><button class="btn-img" onclick="shareCard('todayCard','Today_Summary')">📸 Share as Image</button></div>
+  </div>
+
+  <!-- Row 1: Weekly (left) + Monthly (right) -->
+  <div class="grid-2">
+
+    <!-- Weekly Summary -->
+    <div class="card" id="weekCard">
+      <div class="card-hdr">
+        <div><div class="card-title">📅 Weekly Summary</div><div class="card-sub">Completed jobs by team</div></div>
+        <div class="card-nav">
+          <button class="nav-btn" onclick="shiftWeek(-1)">◀</button>
+          <div class="nav-label" id="weekLabel">—</div>
+          <button class="nav-btn" onclick="shiftWeek(1)">▶</button>
+        </div>
+      </div>
+      <div id="weekPills" class="pills" style="display:none"></div>
+      <div class="tbl-wrap"><div id="weekTable"><div class="loading-msg"><div class="spinner"></div><br>Loading…</div></div></div>
+      <div class="card-foot"><button class="btn-img" onclick="shareCard('weekCard','Weekly_Report')">📸 Share as Image</button></div>
+    </div>
+
+    <!-- Monthly Summary -->
+    <div class="card" id="monthCard">
+      <div class="card-hdr">
+        <div><div class="card-title">📆 Monthly Summary</div><div class="card-sub">Completed jobs by team</div></div>
+        <div class="card-nav">
+          <button class="nav-btn" onclick="shiftMonth(-1)">◀</button>
+          <div class="nav-label" id="monthLabel">—</div>
+          <button class="nav-btn" onclick="shiftMonth(1)">▶</button>
+        </div>
+      </div>
+      <div id="monthPills" class="pills" style="display:none"></div>
+      <div class="tbl-wrap"><div id="monthTable"><div class="loading-msg"><div class="spinner"></div><br>Loading…</div></div></div>
+      <div class="card-foot"><button class="btn-img" onclick="shareCard('monthCard','Monthly_Report')">📸 Share as Image</button></div>
+    </div>
+
+  </div><!-- /row 1 -->
+
+  <!-- Row 2: Monthly Engineer (left) + Date-wise (right) -->
+  <div class="grid-2">
+
+    <!-- Monthly DEWA Engineer Summary -->
+    <div class="card" id="engCard">
+      <div class="card-hdr">
+        <div><div class="card-title">👷 Monthly Engineer Summary</div><div class="card-sub">Jobs by DEWA engineer (assigned date)</div></div>
+        <div class="card-nav">
+          <button class="nav-btn" onclick="shiftEngMonth(-1)">◀</button>
+          <div class="nav-label" id="engMonthLabel">—</div>
+          <button class="nav-btn" onclick="shiftEngMonth(1)">▶</button>
+        </div>
+      </div>
+      <div class="tbl-wrap"><div id="engTable"><div class="loading-msg"><div class="spinner"></div><br>Loading…</div></div></div>
+      <div class="card-foot"><button class="btn-img" onclick="shareCard('engCard','Engineer_Monthly_Report')">📸 Share as Image</button></div>
+    </div>
+
+    <!-- Date-wise Work Order Summary -->
+    <div class="card" id="datewiseCard">
+      <div class="card-hdr">
+        <div><div class="card-title">📋 Date-wise Work Order Summary</div><div class="card-sub">Assigned date × DEWA engineer</div></div>
+      </div>
+      <div class="filters">
+        <label>Month:</label>
+        <select id="monthFilter" onchange="renderDatewise()"><option value="">All Months</option></select>
+        <label>Engineer:</label>
+        <select id="engFilter" onchange="renderDatewise()"><option value="">All Engineers</option></select>
+      </div>
+      <div class="filters">
+        <label>From:</label><input type="date" id="dtFrom">
+        <label>To:</label><input type="date" id="dtTo">
+        <button class="fbtn" onclick="renderDatewise()">Filter</button>
+        <button class="fbtn clr" onclick="clearFilter()">Clear</button>
+      </div>
+      <div class="tbl-wrap"><div id="datewiseTable"><div class="loading-msg"><div class="spinner"></div><br>Loading…</div></div></div>
+      <div class="card-foot"><button class="btn-img" onclick="shareCard('datewiseCard','Datewise_Report')">📸 Share as Image</button></div>
+    </div>
+
+  </div><!-- /row 2 -->
+
+</div><!-- /page -->
+
+<script>
+var WB_URL = localStorage.getItem('dewa_wb_url') || '';
+var allJobs = [];
+var weekOffset = 0, monthOffset = 0, engMonthOffset = 0;
+var MON = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+var TC  = {Mubarak:'#3b82f6',Yousaf:'#f59e0b',YOUSAF:'#f59e0b',Azeem:'#a855f7',Mudasir:'#ec4899',Shahbaz:'#f97316',Other:'#94a3b8'};
+var TEAMS = ['Mubarak','Yousaf','Azeem','Mudasir','Shahbaz','Other'];
+
+// ── Date helpers ──────────────────────────────────────────────────
+function parseDate(s){
+  if(!s)return null; s=String(s).trim();
+  var m=s.match(/^(\d{1,2})\.(\d{1,2})\.(\d{4})$/); if(m)return new Date(+m[3],+m[2]-1,+m[1]);
+  m=s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/); if(m)return new Date(+m[3],+m[2]-1,+m[1]);
+  m=s.match(/^(\d{1,2}) ([A-Za-z]{3}) (\d{4})$/); if(m){var mi=MON.indexOf(m[2]);if(mi>=0)return new Date(+m[3],mi,+m[1]);}
+  var d=new Date(s); return isNaN(d.getTime())?null:d;
+}
+function fmtDate(d){return d?d.getDate()+' '+MON[d.getMonth()]+' '+d.getFullYear():'';}
+function monthKey(d){return d?MON[d.getMonth()]+' '+d.getFullYear():'';}
+function getWeekRange(off){
+  var now=new Date(),day=now.getDay();
+  var mon=new Date(now); mon.setDate(now.getDate()-(day===0?6:day-1)+off*7); mon.setHours(0,0,0,0);
+  var sun=new Date(mon); sun.setDate(mon.getDate()+6); sun.setHours(23,59,59,999);
+  return{start:mon,end:sun};
+}
+function getMonthRange(off){
+  var now=new Date(),y=now.getFullYear(),mo=now.getMonth()+off;
+  while(mo<0){mo+=12;y--;} while(mo>11){mo-=12;y++;}
+  return{start:new Date(y,mo,1,0,0,0,0),end:new Date(y,mo+1,0,23,59,59,999),label:MON[mo]+' '+y};
+}
+function inRange(ds,s,e){var d=parseDate(ds);return d&&d>=s&&d<=e;}
+
+// ── Load data ─────────────────────────────────────────────────────
+function loadData(){
+  if(!WB_URL){
+    document.getElementById('loadStatus').textContent='No URL';
+    var msg='<div class="empty">⬆ Paste your Apps Script URL above</div>';
+    ['weekTable','monthTable','engTable','datewiseTable'].forEach(function(id){document.getElementById(id).innerHTML=msg;});
+    return;
+  }
+  var st=document.getElementById('loadStatus'); st.textContent='⏳';
+  fetch(WB_URL+'?action=getReportData&_t='+Date.now())
+    .then(function(r){return r.json();})
+    .then(function(d){
+      if(!d.ok)throw new Error(d.msg||'Error');
+      allJobs=d.data||[];
+      st.textContent='✔ '+allJobs.length+' jobs';
+      setTimeout(function(){st.textContent='';},3000);
+      populateDropdowns();
+      renderToday(); renderWeekly(); renderMonthly(); renderEngMonthly(); renderDatewise();
+    })
+    .catch(function(e){
+      st.textContent='❌';
+      var msg='<div class="empty" style="text-align:left;padding:16px">'
+        +'<b style="color:var(--red)">❌ Failed to load</b><br><span style="font-size:10px;color:#94a3b8">'+e.message+'</span>'
+        +'<br><span style="font-size:10px;color:var(--mut)">Check URL · deploy · Anyone access</span></div>';
+      ['weekTable','monthTable','engTable','datewiseTable'].forEach(function(id){document.getElementById(id).innerHTML=msg;});
+    });
+}
+
+// ── Populate dropdowns ────────────────────────────────────────────
+function populateDropdowns(){
+  var months={},engs={};
+  allJobs.forEach(function(j){
+    var d=parseDate(j.assignedDate);
+    if(d)months[monthKey(d)]=d.getFullYear()*100+d.getMonth();
+    if(j.dewaEngineer)engs[j.dewaEngineer]=1;
+  });
+  var mSel=document.getElementById('monthFilter'),mCur=mSel.value;
+  var mList=Object.keys(months).sort(function(a,b){return months[b]-months[a];});
+  mSel.innerHTML='<option value="">All Months</option>';
+  mList.forEach(function(m){var o=document.createElement('option');o.value=m;o.textContent=m;if(m===mCur)o.selected=true;mSel.appendChild(o);});
+  var eSel=document.getElementById('engFilter'),eCur=eSel.value;
+  eSel.innerHTML='<option value="">All Engineers</option>';
+  Object.keys(engs).sort().forEach(function(e){var o=document.createElement('option');o.value=e;o.textContent=e;if(e===eCur)o.selected=true;eSel.appendChild(o);});
+}
+
+
+// ── Today Summary ─────────────────────────────────────────────────
+function renderToday(){
+  var now=new Date();
+  var y=now.getFullYear(),mo=now.getMonth(),d=now.getDate();
+  var start=new Date(y,mo,d,0,0,0,0), end=new Date(y,mo,d,23,59,59,999);
+  var lbl=d+' '+MON[mo]+' '+y;
+  document.getElementById('todayDateLbl').textContent=lbl;
+  var gr={},ga={};TEAMS.forEach(function(t){gr[t]=0;ga[t]=0;});
+  allJobs.forEach(function(j){
+    if(j.status!=='Completed'||!inRange(j.completedDate,start,end))return;
+    var t=(j.team||'').trim(),tt=TEAMS.indexOf(t)>=0?t:'Other';
+    gr[tt]++;ga[tt]+=parseFloat(j.actualArea)||0;
+  });
+  var tot=0,totA=0;TEAMS.forEach(function(t){tot+=gr[t];totA+=ga[t];});
+  var pills=document.getElementById('todayPills');
+  if(!tot){
+    pills.style.display='none';
+    document.getElementById('todayTable').innerHTML='<div class="empty">No completed jobs today.</div>';
+    return;
+  }
+  pills.style.display='flex';
+  pills.innerHTML='<div class="pill"><div class="pill-val">'+tot+'</div><div class="pill-lbl">Jobs Today</div></div>'
+    +'<div class="pill"><div class="pill-sub">'+totA.toFixed(1)+'</div><div class="pill-lbl">m² Today</div></div>';
+  var rows='';
+  TEAMS.forEach(function(t){
+    if(!gr[t])return;
+    var c=TC[t]||'#94a3b8';
+    rows+='<tr><td style="color:'+c+';font-weight:700">'+t+'</td><td class="c" style="color:'+c+'">'+gr[t]+'</td><td class="r" style="color:'+c+'">'+ga[t].toFixed(1)+'</td></tr>';
+  });
+  document.getElementById('todayTable').innerHTML='<table>'
+    +'<thead><tr><th>Team</th><th class="c">Jobs</th><th class="r">Area m²</th></tr></thead>'
+    +'<tbody>'+rows+'</tbody>'
+    +'<tfoot><tr><td><b>TOTAL</b></td><td class="c grn">'+tot+'</td><td class="r">'+totA.toFixed(1)+'</td></tr></tfoot></table>';
+}
+// ── Weekly ────────────────────────────────────────────────────────
+function shiftWeek(d){weekOffset+=d;renderWeekly();}
+function renderWeekly(){
+  var r=getWeekRange(weekOffset);
+  document.getElementById('weekLabel').textContent=fmtDate(r.start)+'–'+fmtDate(r.end);
+  var gr={},ga={};TEAMS.forEach(function(t){gr[t]=0;ga[t]=0;});
+  allJobs.forEach(function(j){
+    if(j.status!=='Completed'||!inRange(j.completedDate,r.start,r.end))return;
+    var t=(j.team||'').trim(),tt=TEAMS.indexOf(t)>=0?t:'Other';
+    gr[tt]++;ga[tt]+=parseFloat(j.actualArea)||0;
+  });
+  var tot=0,totA=0;TEAMS.forEach(function(t){tot+=gr[t];totA+=ga[t];});
+  var pills=document.getElementById('weekPills');
+  if(!tot){pills.style.display='none';document.getElementById('weekTable').innerHTML='<div class="empty">No completed jobs.</div>';return;}
+  pills.style.display='flex';
+  pills.innerHTML='<div class="pill"><div class="pill-val">'+tot+'</div><div class="pill-lbl">Jobs</div></div>'
+    +'<div class="pill"><div class="pill-sub">'+totA.toFixed(1)+'</div><div class="pill-lbl">m²</div></div>';
+  var rows='';
+  TEAMS.forEach(function(t){
+    if(!gr[t])return;
+    var c=TC[t]||'#94a3b8';
+    rows+='<tr><td style="color:'+c+';font-weight:700">'+t+'</td><td class="c" style="color:'+c+'">'+gr[t]+'</td><td class="r" style="color:'+c+'">'+ga[t].toFixed(1)+'</td></tr>';
+  });
+  document.getElementById('weekTable').innerHTML='<table>'
+    +'<thead><tr><th>Team</th><th class="c">Jobs</th><th class="r">Area m²</th></tr></thead>'
+    +'<tbody>'+rows+'</tbody>'
+    +'<tfoot><tr><td><b>TOTAL</b></td><td class="c grn">'+tot+'</td><td class="r">'+totA.toFixed(1)+'</td></tr></tfoot></table>';
+}
+
+// ── Monthly ───────────────────────────────────────────────────────
+function shiftMonth(d){monthOffset+=d;renderMonthly();}
+function renderMonthly(){
+  var r=getMonthRange(monthOffset);
+  document.getElementById('monthLabel').textContent=r.label;
+  var gr={},ga={};TEAMS.forEach(function(t){gr[t]=0;ga[t]=0;});
+  allJobs.forEach(function(j){
+    if(j.status!=='Completed'||!inRange(j.completedDate,r.start,r.end))return;
+    var t=(j.team||'').trim(),tt=TEAMS.indexOf(t)>=0?t:'Other';
+    gr[tt]++;ga[tt]+=parseFloat(j.actualArea)||0;
+  });
+  var tot=0,totA=0;TEAMS.forEach(function(t){tot+=gr[t];totA+=ga[t];});
+  var pills=document.getElementById('monthPills');
+  if(!tot){pills.style.display='none';document.getElementById('monthTable').innerHTML='<div class="empty">No completed jobs.</div>';return;}
+  pills.style.display='flex';
+  pills.innerHTML='<div class="pill"><div class="pill-val">'+tot+'</div><div class="pill-lbl">Jobs</div></div>'
+    +'<div class="pill"><div class="pill-sub">'+totA.toFixed(1)+'</div><div class="pill-lbl">m²</div></div>';
+  var rows='';
+  TEAMS.forEach(function(t){
+    if(!gr[t])return;
+    var c=TC[t]||'#94a3b8';
+    rows+='<tr><td style="color:'+c+';font-weight:700">'+t+'</td><td class="c" style="color:'+c+'">'+gr[t]+'</td><td class="r" style="color:'+c+'">'+ga[t].toFixed(1)+'</td></tr>';
+  });
+  document.getElementById('monthTable').innerHTML='<table>'
+    +'<thead><tr><th>Team</th><th class="c">Jobs</th><th class="r">Area m²</th></tr></thead>'
+    +'<tbody>'+rows+'</tbody>'
+    +'<tfoot><tr><td><b>TOTAL</b></td><td class="c grn">'+tot+'</td><td class="r">'+totA.toFixed(1)+'</td></tr></tfoot></table>';
+}
+
+// ── Monthly Engineer Summary ──────────────────────────────────────
+function shiftEngMonth(d){engMonthOffset+=d;renderEngMonthly();}
+function renderEngMonthly(){
+  var r=getMonthRange(engMonthOffset);
+  document.getElementById('engMonthLabel').textContent=r.label;
+  var groups={};
+  allJobs.forEach(function(j){
+    var pd=parseDate(j.assignedDate);
+    if(!pd||pd<r.start||pd>r.end)return;
+    var eng=j.dewaEngineer||'Unknown';
+    if(!groups[eng])groups[eng]={eng:eng,total:0,completed:0,pending:0,estArea:0,actArea:0};
+    var g=groups[eng];
+    g.total++;
+    g.estArea+=parseFloat(j.estArea)||0;
+    if(j.status==='Completed'){g.completed++;g.actArea+=parseFloat(j.actualArea)||0;}
+    else g.pending++;
+  });
+  var rows=Object.values(groups).sort(function(a,b){return b.total-a.total;});
+  if(!rows.length){document.getElementById('engTable').innerHTML='<div class="empty">No data for '+r.label+'</div>';return;}
+  var gTot=0,gComp=0,gPend=0,gEst=0,gAct=0;
+  var html='<table><thead><tr><th>DEWA Engineer</th><th class="c">Total</th><th class="c">Done</th><th class="c">Pending</th><th class="r">Est. m²</th><th class="r">Actual m²</th></tr></thead><tbody>';
+  rows.forEach(function(g){
+    gTot+=g.total;gComp+=g.completed;gPend+=g.pending;gEst+=g.estArea;gAct+=g.actArea;
+    html+='<tr>'
+      +'<td style="font-size:10px;font-weight:700;color:#818cf8">'+g.eng+'</td>'
+      +'<td class="c">'+g.total+'</td>'
+      +'<td class="c grn">'+g.completed+'</td>'
+      +'<td class="c '+(g.pending>0?'red':'grn')+'">'+g.pending+'</td>'
+      +'<td class="r" style="color:var(--ylw)">'+g.estArea.toFixed(1)+'</td>'
+      +'<td class="r" style="color:var(--acc)">'+g.actArea.toFixed(1)+'</td>'
+      +'</tr>';
+  });
+  html+='</tbody><tfoot><tr>'
+    +'<td><b>TOTAL</b></td>'
+    +'<td class="c">'+gTot+'</td>'
+    +'<td class="c grn">'+gComp+'</td>'
+    +'<td class="c '+(gPend>0?'red':'grn')+'">'+gPend+'</td>'
+    +'<td class="r" style="color:var(--ylw);font-size:12px">'+gEst.toFixed(1)+'</td>'
+    +'<td class="r">'+gAct.toFixed(1)+'</td>'
+    +'</tr></tfoot></table>';
+  document.getElementById('engTable').innerHTML=html;
+}
+
+// ── Date-wise ─────────────────────────────────────────────────────
+function clearFilter(){
+  document.getElementById('dtFrom').value='';document.getElementById('dtTo').value='';
+  document.getElementById('engFilter').value='';document.getElementById('monthFilter').value='';
+  renderDatewise();
+}
+function renderDatewise(){
+  var fromVal=document.getElementById('dtFrom').value,toVal=document.getElementById('dtTo').value;
+  var engVal=document.getElementById('engFilter').value,monVal=document.getElementById('monthFilter').value;
+  var fromD=fromVal?new Date(fromVal+'T00:00:00'):null,toD=toVal?new Date(toVal+'T23:59:59'):null;
+  var groups={};
+  allJobs.forEach(function(j){
+    var ad=j.assignedDate||'',eng=j.dewaEngineer||'Unknown',key=ad+'|||'+eng;
+    if(engVal&&eng!==engVal)return;
+    if(monVal){var pd=parseDate(ad);if(!pd||monthKey(pd)!==monVal)return;}
+    if(fromD||toD){var pd2=parseDate(ad);if(!pd2)return;if(fromD&&pd2<fromD)return;if(toD&&pd2>toD)return;}
+    if(!groups[key]){var sk=parseDate(ad)?parseDate(ad).getTime():0;groups[key]={date:ad,engineer:eng,total:0,completed:0,pending:0,estArea:0,actArea:0,sortKey:sk};}
+    var g=groups[key];g.total++;g.estArea+=parseFloat(j.estArea)||0;
+    if(j.status==='Completed'){g.completed++;g.actArea+=parseFloat(j.actualArea)||0;}else g.pending++;
+  });
+  var rows=Object.values(groups).sort(function(a,b){return b.sortKey-a.sortKey;});
+  if(!rows.length){document.getElementById('datewiseTable').innerHTML='<div class="empty">No work orders found.</div>';return;}
+  var gTot=0,gComp=0,gPend=0,gEst=0,gAct=0,lastDate='';
+  var html='<table><thead><tr><th>Date</th><th>DEWA Engineer</th><th class="c">Total</th><th class="c">Done</th><th class="c">Pending</th><th class="r">Est. m²</th><th class="r">Actual m²</th></tr></thead><tbody>';
+  rows.forEach(function(g){
+    if(lastDate&&g.date!==lastDate)html+='<tr class="sep-row"><td colspan="7"></td></tr>';
+    lastDate=g.date;
+    gTot+=g.total;gComp+=g.completed;gPend+=g.pending;gEst+=g.estArea;gAct+=g.actArea;
+    html+='<tr>'
+      +'<td style="font-size:10px;color:#94a3b8;font-weight:600">'+g.date+'</td>'
+      +'<td style="font-size:10px;font-weight:700;color:#818cf8">'+g.engineer+'</td>'
+      +'<td class="c">'+g.total+'</td>'
+      +'<td class="c grn">'+g.completed+'</td>'
+      +'<td class="c '+(g.pending>0?'red':'grn')+'">'+g.pending+'</td>'
+      +'<td class="r" style="color:var(--ylw)">'+g.estArea.toFixed(1)+'</td>'
+      +'<td class="r" style="color:var(--acc)">'+g.actArea.toFixed(1)+'</td>'
+      +'</tr>';
+  });
+  html+='</tbody><tfoot><tr>'
+    +'<td colspan="2"><b>GRAND TOTAL</b></td>'
+    +'<td class="c">'+gTot+'</td>'
+    +'<td class="c grn">'+gComp+'</td>'
+    +'<td class="c '+(gPend>0?'red':'grn')+'">'+gPend+'</td>'
+    +'<td class="r" style="color:var(--ylw);font-size:12px">'+gEst.toFixed(1)+'</td>'
+    +'<td class="r">'+gAct.toFixed(1)+'</td>'
+    +'</tr></tfoot></table>';
+  document.getElementById('datewiseTable').innerHTML=html;
+}
+
+// ── Share as Image ────────────────────────────────────────────────
+function shareCard(cardId, filename){
+  var btn=event.target.closest('button');
+  var origText=btn.innerHTML;
+  btn.innerHTML='⏳ Preparing…';btn.classList.add('loading');btn.disabled=true;
+
+  var card=document.getElementById(cardId);
+  html2canvas(card,{
+    backgroundColor:'#111827',
+    scale:2,
+    useCORS:true,
+    logging:false,
+    onclone:function(doc){
+      // Hide share button in captured image
+      var btns=doc.getElementById(cardId).querySelectorAll('.card-foot');
+      btns.forEach(function(b){b.style.display='none';});
+    }
+  }).then(function(canvas){
+    canvas.toBlob(function(blob){
+      var file=new File([blob],filename+'.png',{type:'image/png'});
+      // Try native share (mobile) first
+      if(navigator.share&&navigator.canShare&&navigator.canShare({files:[file]})){
+        navigator.share({files:[file],title:'DEWA Report — Tanveer Ahmed'})
+          .then(function(){})
+          .catch(function(){downloadBlob(blob,filename);});
+      } else {
+        // Desktop fallback: download
+        downloadBlob(blob,filename);
+      }
+      btn.innerHTML=origText;btn.classList.remove('loading');btn.disabled=false;
+    },'image/png');
+  }).catch(function(err){
+    alert('Could not capture image: '+err.message);
+    btn.innerHTML=origText;btn.classList.remove('loading');btn.disabled=false;
+  });
+}
+
+function downloadBlob(blob,filename){
+  var url=URL.createObjectURL(blob);
+  var a=document.createElement('a');
+  a.href=url;a.download=filename+'.png';
+  document.body.appendChild(a);a.click();
+  document.body.removeChild(a);
+  setTimeout(function(){URL.revokeObjectURL(url);},1000);
+}
+
+// ── URL save ──────────────────────────────────────────────────────
+function saveUrl(){
+  var val=document.getElementById('urlInput').value.trim();
+  if(!val){alert('Please paste your Apps Script URL first.');return;}
+  localStorage.setItem('dewa_wb_url',val);WB_URL=val;loadData();
+}
+
+// ── Init ──────────────────────────────────────────────────────────
+window.addEventListener('DOMContentLoaded',function(){
+  var saved=localStorage.getItem('dewa_wb_url')||'';
+  document.getElementById('urlInput').value=saved;
+  if(saved){WB_URL=saved;loadData();}
+  else{
+    var msg='<div class="empty">⬆ Paste URL above and click Save &amp; Load</div>';
+    ['weekTable','monthTable','engTable','datewiseTable'].forEach(function(id){document.getElementById(id).innerHTML=msg;});
+  }
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,15 @@
+{
+  "name": "DEWA Field Tool — Tanveer Ahmed",
+  "short_name": "DEWA Tool",
+  "description": "DEWA Reinstatement Job Tracker",
+  "start_url": "./team.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0a0e1a",
+  "theme_color": "#00c9a7",
+  "icons": [
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ]
+}
