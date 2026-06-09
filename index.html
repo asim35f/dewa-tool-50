@@ -1,0 +1,1492 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>DEWA Cluster Finder</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css"/>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<style>
+:root{--bg:#0a0e1a;--sur:#111827;--sur2:#1a2235;--brd:#1e2d45;--acc:#00c9a7;--blu:#3b82f6;--warn:#f59e0b;--red:#ef4444;--txt:#e2e8f0;--mut:#64748b}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--txt);font-family:'Segoe UI',sans-serif;min-height:100vh;overflow-x:hidden}
+body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(0,201,167,.03) 1px,transparent 1px),linear-gradient(90deg,rgba(0,201,167,.03) 1px,transparent 1px);background-size:40px 40px;pointer-events:none;z-index:0}
+.wrap{position:relative;z-index:1;max-width:1400px;margin:0 auto;padding:16px}
+header{display:flex;align-items:center;gap:12px;margin-bottom:18px;padding-bottom:14px;border-bottom:1px solid var(--brd);flex-wrap:wrap}
+.logo{width:44px;height:44px;border-radius:10px;background:linear-gradient(135deg,var(--acc),var(--blu));display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0}
+header h1{font-size:19px;font-weight:700}
+header p{font-size:11px;color:var(--mut);margin-top:2px}
+.hbadge{margin-left:auto;background:rgba(0,201,167,.1);border:1px solid rgba(0,201,167,.3);color:var(--acc);font-size:11px;padding:4px 10px;border-radius:20px;font-family:monospace}
+.card{background:var(--sur);border:1px solid var(--brd);border-radius:12px;padding:16px 18px;margin-bottom:12px}
+.ct{font-size:11px;font-weight:600;color:var(--acc);font-family:monospace;text-transform:uppercase;letter-spacing:.5px;margin-bottom:12px}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+input[type=text],input[type=number],select{background:var(--bg);border:1px solid var(--brd);color:var(--txt);font-size:13px;padding:9px 12px;border-radius:8px;outline:none;transition:border-color .2s;-webkit-appearance:none;appearance:none;font-family:monospace}
+input[type=text]:focus,input[type=number]:focus,select:focus{border-color:var(--acc)}
+.inp{flex:1;min-width:200px}
+.btn{font-weight:700;font-size:13px;border:none;padding:9px 18px;border-radius:8px;cursor:pointer;transition:opacity .2s;white-space:nowrap}
+.btn:hover{opacity:.85}
+.bg{background:var(--acc);color:#000}
+.bb{background:rgba(59,130,246,.15);border:1px solid rgba(59,130,246,.35);color:var(--blu)}
+.bt{background:rgba(0,201,167,.12);border:1px solid rgba(0,201,167,.3);color:var(--acc)}
+.sm{margin-top:8px;font-size:12px;color:var(--mut);font-family:monospace;min-height:18px}
+.cbar{display:none;margin-top:8px;background:rgba(0,201,167,.07);border:1px solid rgba(0,201,167,.25);border-radius:8px;padding:8px 14px;align-items:center;gap:8px;font-size:12px}
+.uz{border:2px dashed var(--brd);border-radius:10px;padding:24px;text-align:center;cursor:pointer;transition:all .2s;background:var(--bg)}
+.uz:hover,.uz.drag{border-color:var(--acc);background:rgba(0,201,167,.04)}
+.uz h2{font-size:14px;font-weight:600;margin-bottom:4px}
+.uz p{font-size:12px;color:var(--mut)}
+.uz input{display:none}
+.ub{display:inline-block;margin-top:10px;background:var(--acc);color:#000;font-weight:600;font-size:12px;padding:8px 20px;border-radius:8px;cursor:pointer}
+.pdz{border:2px dashed var(--brd);border-radius:10px;padding:14px 18px;text-align:center;background:var(--bg);transition:all .2s}
+.pdz:hover{border-color:var(--blu)}
+.pcnt{display:none;margin-top:8px;background:rgba(0,201,167,.1);border:1px solid rgba(0,201,167,.25);border-radius:20px;padding:4px 14px;font-size:12px;color:var(--acc);font-family:monospace}
+.pchips{display:flex;flex-wrap:wrap;gap:5px;margin-top:10px;max-height:110px;overflow-y:auto}
+.pchips::-webkit-scrollbar{width:3px}
+.pchips::-webkit-scrollbar-thumb{background:var(--brd);border-radius:3px}
+.chip{background:rgba(59,130,246,.12);border:1px solid rgba(59,130,246,.3);color:var(--blu);font-size:11px;padding:3px 8px;border-radius:20px;display:flex;align-items:center;gap:4px;font-family:monospace}
+.chip button{background:none;border:none;color:var(--red);cursor:pointer;font-size:13px;line-height:1;padding:0}
+.ctrl{display:flex;gap:12px;align-items:flex-end;flex-wrap:wrap;background:var(--sur);border:1px solid var(--brd);border-radius:12px;padding:14px 16px;margin-bottom:12px}
+.cg{display:flex;flex-direction:column;gap:5px}
+.cg label{font-size:10px;color:var(--mut);font-family:monospace;text-transform:uppercase;letter-spacing:.5px}
+.cg input,.cg select{width:150px}
+.rbtn{background:linear-gradient(135deg,var(--acc),#00a886);color:#000;font-weight:700;font-size:14px;border:none;padding:9px 26px;border-radius:8px;cursor:pointer;align-self:flex-end;transition:transform .15s,opacity .2s}
+.rbtn:hover{transform:translateY(-1px)}
+.rbtn:disabled{opacity:.4;cursor:not-allowed;transform:none}
+.sfb{display:flex;gap:10px;flex-wrap:wrap;align-items:center;background:var(--sur);border:1px solid var(--brd);border-radius:10px;padding:10px 14px;margin-bottom:12px}
+.sfb input,.sfb select{flex:1;min-width:130px}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px;margin-bottom:12px}
+.stat{background:var(--sur);border:1px solid var(--brd);border-radius:10px;padding:12px 14px;border-left:3px solid var(--acc)}
+.stat .v{font-size:22px;font-weight:700;font-family:monospace}
+.stat .l{font-size:10px;color:var(--mut);margin-top:3px;text-transform:uppercase;letter-spacing:.4px}
+.leg{display:flex;flex-wrap:wrap;gap:12px;background:var(--sur);border:1px solid var(--brd);border-radius:10px;padding:10px 14px;margin-bottom:12px;align-items:center}
+.li{display:flex;align-items:center;gap:6px;font-size:12px}
+.ld{width:14px;height:14px;border-radius:50%;flex-shrink:0;border:2px solid rgba(255,255,255,.3)}
+.mgrid{display:grid;grid-template-columns:1fr 380px;gap:12px}
+@media(max-width:900px){.mgrid{grid-template-columns:1fr}}
+#mapwrap{background:var(--sur);border:1px solid var(--brd);border-radius:14px;overflow:hidden;height:520px}
+#map{width:100%;height:100%}
+.expbar{display:flex;gap:10px;margin-top:10px;flex-wrap:wrap}
+.ebtn{background:var(--sur2);border:1px solid var(--brd);color:var(--txt);font-size:12px;font-weight:600;padding:9px 16px;border-radius:8px;cursor:pointer;transition:all .2s}
+.ebtn:hover{border-color:var(--acc);color:var(--acc)}
+.ebtn.sh{background:rgba(0,201,167,.1);border-color:rgba(0,201,167,.3);color:var(--acc)}
+.cpanel{background:var(--sur);border:1px solid var(--brd);border-radius:14px;display:flex;flex-direction:column;overflow:hidden;height:520px}
+@media(max-width:900px){.cpanel{height:460px}}
+.ph{padding:11px 14px;border-bottom:1px solid var(--brd);font-weight:600;font-size:13px;display:flex;align-items:center;gap:8px;flex-shrink:0}
+.cl{overflow-y:auto;flex:1;padding:8px;-webkit-overflow-scrolling:touch}
+.cl::-webkit-scrollbar{width:3px}
+.cl::-webkit-scrollbar-thumb{background:var(--brd);border-radius:3px}
+.ccard{border:1px solid var(--brd);border-radius:9px;margin-bottom:8px;overflow:hidden;cursor:pointer;transition:border-color .2s,transform .15s}
+.ccard:hover{border-color:var(--blu);transform:translateX(2px)}
+.ccard.active{border-color:var(--acc)}
+.ch{display:flex;align-items:center;gap:8px;padding:9px 12px;background:var(--sur2)}
+.cd{width:11px;height:11px;border-radius:50%;flex-shrink:0}
+.ctit{font-weight:600;font-size:12px;flex:1}
+.ccnt{background:rgba(59,130,246,.15);color:var(--blu);font-size:10px;padding:2px 7px;border-radius:20px;font-family:monospace}
+.cj{padding:5px 12px 7px}
+.jr{display:flex;align-items:center;padding:5px 0;border-bottom:1px solid var(--brd);font-size:12px;gap:5px}
+.jr:last-child{border-bottom:none}
+.jn{font-family:monospace;font-size:11px;flex-shrink:0;cursor:pointer;text-decoration:underline dotted}
+.jn:hover{color:var(--acc)}
+.js{font-size:12px;color:var(--mut);flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.jd{font-size:10px;color:var(--warn);flex-shrink:0;font-family:monospace}
+.jdot{width:9px;height:9px;border-radius:50%;flex-shrink:0}
+.pb{background:none;border:none;cursor:pointer;font-size:15px;padding:2px 4px;transition:transform .15s;flex-shrink:0;line-height:1}
+.pb:hover{transform:scale(1.2)}
+.pb.np{opacity:.2;cursor:default}
+.pb.np:hover{transform:none}
+.ls{margin-top:12px}
+.lt{font-size:10px;color:var(--mut);font-family:monospace;margin-bottom:5px;padding:0 2px;text-transform:uppercase;letter-spacing:.5px}
+.lr{padding:5px 3px;font-size:12px;border-bottom:1px solid var(--brd);display:flex;gap:5px;align-items:center}
+.lr:hover{background:rgba(255,255,255,.02)}
+.mov{position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:9000;display:flex;align-items:flex-end;justify-content:center;padding:14px;animation:fi .2s ease}
+@keyframes fi{from{opacity:0}to{opacity:1}}
+.mbox{background:var(--sur);border:1px solid var(--brd);border-radius:18px 18px 14px 14px;width:100%;max-width:540px;max-height:92vh;overflow-y:auto;padding:22px;animation:su .25s ease;-webkit-overflow-scrolling:touch}
+@media(min-width:600px){.mov{align-items:center}.mbox{border-radius:14px}}
+@keyframes su{from{transform:translateY(40px);opacity:0}to{transform:translateY(0);opacity:1}}
+.mbox h3{font-size:15px;font-weight:700;margin-bottom:14px;font-family:monospace;color:var(--acc)}
+.cbtn{float:right;background:var(--sur2);border:1px solid var(--brd);color:var(--txt);font-size:17px;width:30px;height:30px;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center}
+.mf{display:flex;flex-direction:column;gap:4px;margin-bottom:11px}
+.mf label{font-size:10px;color:var(--mut);font-family:monospace;text-transform:uppercase;letter-spacing:.5px}
+.mf .vd{font-size:14px;color:var(--txt)}
+.mf input,.mf select{background:var(--bg);border:1px solid var(--brd);color:var(--txt);font-family:monospace;font-size:13px;padding:8px 12px;border-radius:8px;outline:none;width:100%;transition:border-color .2s;-webkit-appearance:none;appearance:none}
+.mf input:focus,.mf select:focus{border-color:var(--acc)}
+.arow{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
+.arow .mf{margin-bottom:0}
+@media(max-width:500px){.arow{grid-template-columns:1fr}}
+.bal{background:var(--bg);border:1px solid var(--brd);border-radius:8px;padding:9px 12px;font-family:monospace;font-size:14px}
+.bal.pos{border-color:rgba(234,179,8,.4);color:#eab308}
+.bal.zero{border-color:rgba(34,197,94,.4);color:#22c55e}
+.bal.neg{border-color:rgba(239,68,68,.4);color:var(--red)}
+.ma{display:flex;gap:10px;margin-top:16px;flex-wrap:wrap}
+.ms{background:linear-gradient(135deg,var(--acc),#00a886);color:#000;font-weight:700;font-size:13px;border:none;padding:10px 22px;border-radius:8px;cursor:pointer;flex:1}
+.mp{background:rgba(59,130,246,.15);border:1px solid rgba(59,130,246,.3);color:var(--blu);font-size:13px;font-weight:600;padding:10px 18px;border-radius:8px;cursor:pointer;flex:1}
+.mp:disabled{opacity:.35;cursor:not-allowed}
+.lb{background:rgba(0,201,167,.08);border:1px solid rgba(0,201,167,.25);border-radius:10px;padding:14px 18px;margin-bottom:12px;font-size:13px;color:var(--acc);font-family:monospace;display:flex;align-items:center;gap:10px}
+.sp{display:inline-block;animation:rot 1s linear infinite}
+@keyframes rot{to{transform:rotate(360deg)}}
+.leaflet-popup-content-wrapper{background:var(--sur);color:var(--txt);border:1px solid var(--brd);border-radius:12px;box-shadow:0 8px 30px rgba(0,0,0,.5)}
+.leaflet-popup-tip{background:var(--sur)}
+.leaflet-popup-content{font-size:13px;line-height:1.6;margin:12px 14px}
+.prl{font-family:monospace;color:var(--acc);cursor:pointer;text-decoration:underline dotted;font-weight:600}
+.ppdf{display:inline-flex;align-items:center;gap:5px;background:rgba(59,130,246,.15);border:1px solid rgba(59,130,246,.3);color:var(--blu);padding:5px 12px;border-radius:8px;font-size:12px;cursor:pointer;margin-top:8px;font-family:monospace;font-weight:600}
+.popen{display:inline-flex;align-items:center;gap:5px;background:rgba(0,201,167,.1);border:1px solid rgba(0,201,167,.3);color:var(--acc);padding:5px 12px;border-radius:8px;font-size:12px;cursor:pointer;margin-top:4px;font-family:monospace;font-weight:600}
+hr.dv{border:none;border-top:1px solid var(--brd);margin:12px 0}
+.hidden{display:none!important}
+.pill{display:inline-block;padding:2px 8px;border-radius:20px;font-size:10px;font-family:monospace;background:rgba(0,201,167,.1);color:var(--acc)}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+  <div class="logo">&#128205;</div>
+  <div>
+    <h1>Tanveer Ahmed Road Contracting LLC</h1>
+    <p>Reinstatement of Tiles &amp; Asphalt &mdash; HCM (W) Dept &mdash; Water &amp; Civil</p>
+    <p style="font-family:monospace;font-size:10px;color:var(--acc);margin-top:2px">RFX No. 2122500177 &nbsp;&middot;&nbsp; GIS Cluster Finder v8</p>
+  </div>
+  <div class="hbadge" id="modeBadge">ADMIN MODE</div>
+</header>
+
+<div class="lb hidden" id="lbanner"><span class="sp" style="font-size:18px">&#9881;</span><span id="lmsg">Loading&hellip;</span></div>
+
+<!-- ADMIN ONLY (stripped in shared) -->
+<div id="adminSec">
+  <div id="dz" style="display:none"></div>
+
+
+  <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:12px">
+  <div class="card" style="border-color:rgba(0,201,167,.25);padding:10px 14px;margin-bottom:8px">
+    <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+      <span style="font-size:11px;font-weight:600;color:var(--acc);font-family:monospace;text-transform:uppercase;white-space:nowrap">&#9889; Sheet Write-Back URL</span>
+      <input type="text" id="inWB" class="inp" placeholder="Paste your Apps Script Web App URL (for write-back)&hellip;" autocomplete="off" style="min-width:180px;font-size:12px;padding:7px 10px">
+      <button onclick="setWritebackUrl(document.getElementById('inWB').value)" class="btn bb" style="padding:7px 12px;font-size:12px">&#10003; Save</button>
+    </div>
+    <div class="sm" id="msgWB" style="margin-top:4px"></div>
+  </div>
+  <div class="card" id="xlCard" style="flex:1;min-width:280px;margin-bottom:0" style="padding:10px 14px;margin-bottom:8px">
+    <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+      <span style="font-size:11px;font-weight:600;color:var(--acc);font-family:monospace;text-transform:uppercase;letter-spacing:.5px;white-space:nowrap">&#128202; Excel / Google Sheets</span>
+      <input type="text" id="inExcel" class="inp" placeholder="Paste Google Sheets or Drive Excel link&hellip;" autocomplete="off" style="min-width:160px;font-size:12px;padding:7px 10px">
+      <button class="btn bb" id="btnSE" style="padding:7px 12px;font-size:12px">&#10003; Save</button>
+      <button class="btn bt" id="btnLE" style="padding:7px 12px;font-size:12px">&#11015; Load</button>
+      <label style="background:var(--sur2);border:1px solid var(--brd);color:var(--txt);font-size:12px;padding:7px 12px;border-radius:8px;cursor:pointer;font-weight:600;white-space:nowrap">&#128193; Browse<input type="file" id="xlFile" accept=".xlsx,.xls,.csv" style="display:none"></label>
+    </div>
+    <div class="sm" id="msgE" style="margin-top:5px"></div>
+    <div id="dzMsg" style="font-size:11px;color:var(--mut);font-family:monospace;margin-top:3px"></div>
+  </div>
+  <div class="card" id="pdfCard" style="flex:1;min-width:280px;margin-bottom:0" style="padding:10px 14px;margin-bottom:8px">
+    <div class="ct">&#128196; PDF Files</div>
+    <div style="display:flex;gap:8px;margin-bottom:12px">
+      <button onclick="pdfTab(1)" id="ptab1" style="background:var(--acc);color:#000;border:none;padding:7px 16px;border-radius:7px;font-size:12px;font-weight:700;cursor:pointer">&#128194; Local Upload</button>
+      <button onclick="pdfTab(2)" id="ptab2" style="background:var(--sur2);color:var(--mut);border:1px solid var(--brd);padding:7px 16px;border-radius:7px;font-size:12px;font-weight:600;cursor:pointer">&#9729; Drive Links</button>
+    </div>
+    <div id="ptab1c">
+      <div id="pdfDz" style="border:1px dashed var(--brd);border-radius:8px;padding:10px 14px;background:var(--bg);display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+        <span style="font-size:12px;color:var(--mut);flex:1">Drop PDFs here &mdash; filename must match Notification Number e.g. <span style="color:var(--acc);font-family:monospace">12345678.pdf</span></span>
+        <label style="background:var(--acc);color:#000;font-weight:600;font-size:12px;padding:7px 16px;border-radius:7px;cursor:pointer;white-space:nowrap">Choose PDFs<input type="file" id="pdfFile" accept=".pdf" multiple style="display:none"></label>
+      </div>
+      <div id="pdfBadge" class="pcnt hidden" style="margin-top:6px"></div>
+      <div class="pchips" id="pchips" style="margin-top:6px;max-height:80px"></div>
+    </div>
+    <div id="ptab2c" class="hidden">
+      <!-- Paste file IDs -->
+      <div style="background:var(--bg);border:1px solid rgba(59,130,246,.2);border-radius:8px;padding:10px 12px;margin-bottom:8px">
+        <div style="font-size:11px;font-weight:600;color:var(--blu);font-family:monospace;margin-bottom:6px">&#11015; PASTE FILE IDs &mdash; any format accepted</div>
+        <div style="font-size:11px;color:var(--mut);margin-bottom:6px;font-family:monospace">
+          2001271364 = 1ABCfileId &nbsp;|&nbsp; {"2001271364":"1ABCfileId"} &nbsp;|&nbsp; drive.google.com/file/d/ID/view
+        </div>
+        <textarea id="pasteJson" rows="3" placeholder="Paste here: notif = fileId  (one per line)  OR  JSON  OR  Drive share links" style="width:100%;background:var(--sur);border:1px solid rgba(59,130,246,.25);color:var(--txt);font-family:monospace;font-size:12px;padding:8px 10px;border-radius:6px;outline:none;resize:vertical;line-height:1.5;margin-bottom:6px"></textarea>
+        <div style="display:flex;gap:6px;align-items:center">
+          <button onclick="importPastedData()" style="background:var(--blu);color:#fff;border:none;padding:7px 18px;border-radius:7px;font-size:12px;font-weight:700;cursor:pointer">&#11015; Import</button>
+          <button onclick="clearAllPdfs()" style="background:none;color:var(--red);border:1px solid rgba(239,68,68,.25);padding:7px 12px;border-radius:7px;font-size:11px;cursor:pointer">Clear All</button>
+          <div id="pasteMsg" style="font-size:11px;font-family:monospace"></div>
+        </div>
+      </div>
+      <!-- Linked PDFs -->
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
+        <span style="font-size:11px;color:var(--mut);font-family:monospace">LINKED PDFs (<span id="pdfCountLbl">0</span>)</span>
+        <span style="font-size:11px;color:var(--acc);cursor:pointer;text-decoration:underline dotted" onclick="showGasCode()">&#128196; Apps Script</span>
+      </div>
+      <div id="drPdfList" style="max-height:120px;overflow-y:auto;margin-bottom:8px"></div>
+      <!-- Add single -->
+      <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">
+        <input type="text" id="drN" placeholder="Notification No." style="flex:1;min-width:120px;background:var(--bg);border:1px solid var(--brd);color:var(--txt);font-family:monospace;font-size:11px;padding:6px 8px;border-radius:6px;outline:none">
+        <input type="text" id="drL" placeholder="Drive share link" style="flex:2;min-width:160px;background:var(--bg);border:1px solid var(--brd);color:var(--txt);font-family:monospace;font-size:11px;padding:6px 8px;border-radius:6px;outline:none">
+        <button onclick="addDrPdf()" style="background:var(--acc);color:#000;border:none;padding:6px 12px;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer">+ Add</button>
+      </div>
+    </div>
+  </div>
+  </div>
+</div>
+
+<!-- CONTROLS (both modes) -->
+<div class="ctrl">
+  <div class="cg"><label>Max Distance (m)</label><input type="number" id="distIn" value="300" min="50" max="5000" step="50"></div>
+  <div class="cg"><label>Min Jobs / Cluster</label><input type="number" id="minJ" value="2" min="2" max="20"></div>
+  <div class="cg"><label>Area / Zone Filter</label><select id="areaF"><option value="">All Areas</option></select></div>
+  <button class="rbtn" id="runBtn" disabled>&#9654; Find Clusters</button>
+</div>
+
+<!-- SEARCH/FILTER -->
+<div class="stats hidden" id="statsBar">
+  <div class="stat" style="border-left-color:#00c9a7"><div class="v" id="sTotal" style="color:#00c9a7">0</div><div class="l">Total Jobs</div></div>
+  <div class="stat" style="border-left-color:#22c55e"><div class="v" id="sComp"  style="color:#22c55e">0</div><div class="l">&#x2705; Completed</div></div>
+  <div class="stat" style="border-left-color:#eab308"><div class="v" id="sPend"  style="color:#eab308">0</div><div class="l">&#x23F3; Pending</div></div>
+  <div class="stat" style="border-left-color:#3b82f6"><div class="v" id="sEst"   style="color:#3b82f6">0</div><div class="l">Est. m&#178;</div></div>
+  <div class="stat" style="border-left-color:#22c55e"><div class="v" id="sDone"  style="color:#22c55e">0</div><div class="l">Done m&#178;</div></div>
+  <div class="stat" style="border-left-color:#eab308"><div class="v" id="sPArea" style="color:#eab308">0</div><div class="l">Pending m&#178;</div></div>
+  <div class="stat" style="border-left-color:#00c9a7"><div class="v" id="sPct"   style="color:#00c9a7">0%</div><div class="l">Completion</div></div>
+</div>
+<div class="sfb hidden" id="sfb" style="align-items:center;gap:8px">
+  <span>&#128269;</span>
+  <input type="text" id="srch" placeholder="Search notification / street&hellip;" oninput="doFilter()" style="flex:1">
+  <select id="stF" style="display:none"></select>
+  <button id="btnPend" onclick="setStatusFilter('Pending')" style="background:rgba(234,179,8,.15);border:1px solid rgba(234,179,8,.4);color:#eab308;font-size:12px;font-weight:700;padding:7px 16px;border-radius:8px;cursor:pointer;white-space:nowrap;transition:all .2s">&#x23F3; Pending</button>
+  <button id="btnComp" onclick="setStatusFilter('Completed')" style="background:rgba(34,197,94,.12);border:1px solid rgba(34,197,94,.35);color:#22c55e;font-size:12px;font-weight:700;padding:7px 16px;border-radius:8px;cursor:pointer;white-space:nowrap;transition:all .2s">&#x2705; Completed</button>
+  <button id="btnAll" onclick="setStatusFilter('')" style="background:rgba(0,201,167,.1);border:1px solid rgba(0,201,167,.3);color:var(--acc);font-size:12px;font-weight:600;padding:7px 14px;border-radius:8px;cursor:pointer;white-space:nowrap;transition:all .2s">All</button>
+  <button id="btnToday" onclick="setTodayFilter(this)" style="background:rgba(0,201,167,.1);border:1px solid rgba(0,201,167,.3);color:var(--acc);font-size:12px;font-weight:600;padding:7px 14px;border-radius:8px;cursor:pointer;white-space:nowrap">Today</button>
+  <button onclick="showDailySummary()" style="background:rgba(37,211,102,.1);border:1px solid rgba(37,211,102,.3);color:#25d366;font-size:12px;font-weight:600;padding:7px 14px;border-radius:8px;cursor:pointer;white-space:nowrap">Summary</button>
+
+  <select id="monthF" onchange="setMonthFilter(this.value)" style="font-size:12px;padding:7px 8px;border-radius:8px;border:1px solid rgba(255,255,255,.1);background:#1a2235;color:#e2e8f0;cursor:pointer"><option value="">All Months</option></select>
+  <button onclick="showTodaySummary()" style="background:rgba(251,146,60,.1);border:1px solid rgba(251,146,60,.3);color:#fb923c;font-size:12px;font-weight:600;padding:7px 14px;border-radius:8px;cursor:pointer;white-space:nowrap">Today Summary</button>
+</div>
+
+<!-- STATS (no Clusters or Trips Saved) -->
+
+<!-- MAP + PANEL -->
+<div class="mgrid hidden" id="mgrid">
+  <div>
+    <div id="mapwrap"><div id="map"></div></div>
+    <div class="expbar">
+      <button class="ebtn" id="btnXL">&#11015; Export Report (.xlsx)</button>
+      <button class="ebtn" id="btnGM">&#128506; Open in Google Maps</button>
+      <button class="ebtn sh" id="btnSh">&#128228; Save &amp; Share</button>
+    </div>
+  </div>
+  <div class="cpanel">
+    <div class="ph">&#128279; Clusters &amp; Jobs <span class="pill" id="clBadge">0</span></div>
+    <div class="cl" id="clList"></div>
+  </div>
+</div>
+</div>
+
+<!-- MODAL -->
+<div class="mov hidden" id="mOv" onclick="ovClick(event)">
+  <div class="mbox">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+      <h3 id="mTitle">GIS Reference</h3>
+      <button class="cbtn" onclick="closeM()">&#x2715;</button>
+    </div>
+    <div class="mf"><label>Notification Number</label><div class="vd" id="mNotif" style="font-family:monospace;color:var(--acc);font-size:16px;font-weight:700"></div></div>
+    
+    
+    
+    
+    
+    
+    <hr class="dv">
+    <div class="mf">
+      <label>Status</label>
+      <select id="mStat" onchange="updBal()">
+        <option>Pending</option><option>In Progress</option>
+        <option>Completed</option><option>Partially Completed</option>
+      </select>
+      
+    </div>
+    <div class="arow">
+      <div class="mf"><label>Est. Area (sqm)</label><input type="number" id="mEst" placeholder="0" min="0" oninput="updBal()" inputmode="decimal"></div>
+      <div class="mf"><label>Actual Done (sqm)</label><input type="number" id="mAct" placeholder="0" min="0" oninput="updBal()" inputmode="decimal"></div>
+      <div class="mf"><label>Balance (sqm)</label><div class="bal" id="mBal">&mdash;</div></div>
+    </div>
+    <div style="min-height:18px;margin-bottom:4px"><div id="mTeamDate"></div></div>
+    <div class="mf" style="margin-top:12px"><label>PDF</label><div id="mPdfInfo" style="font-size:13px;color:var(--mut);font-family:monospace"></div></div>
+    <div class="ma">
+      <button class="ms" id="mSaveBtn" onclick="saveM()">&#128190; Save</button>
+      
+      <button class="mp" id="mPdfBtn" onclick="openLinkedPdf()" disabled>&#128196; Open PDF</button>
+      <button class="mp" id="mGmBtn" onclick="openJobGmap()" style="background:rgba(34,197,94,.12);border-color:rgba(34,197,94,.3);color:#22c55e">&#128506; Google Maps</button>
+    </div>
+  </div>
+</div><div class="leg hidden" id="legend">
+  <span style="font-size:11px;color:var(--mut);font-family:monospace;font-weight:600">MAP:</span>
+  <div class="li"><div class="ld" style="background:#22c55e"></div>Completed</div>
+  <div class="li"><div class="ld" style="background:#eab308"></div>Pending</div>
+  <div class="li"><div class="ld" style="background:#3b82f6"></div>In Progress</div>
+  <div class="li"><div class="ld" style="background:#f59e0b"></div>Partial</div>
+  <span style="margin-left:auto;font-size:11px;color:var(--mut)">Click ref# → fly to pin &nbsp;&#128196;=PDF &nbsp;&#128221;=Details</span>
+</div>
+<div id="teamBar" class="stats hidden" style="margin-top:6px">
+  <div class="stat" style="border-left-color:#3b82f6"><div class="v" id="tMubarak" style="color:#3b82f6">0</div><div class="l">Mubarak</div></div>
+  <div class="stat" style="border-left-color:#f59e0b"><div class="v" id="tYousaf" style="color:#f59e0b">0</div><div class="l">Yousaf</div></div>
+  <div class="stat" style="border-left-color:#a855f7"><div class="v" id="tAzeem" style="color:#a855f7">0</div><div class="l">Azeem</div></div>
+  <div class="stat" style="border-left-color:#ec4899"><div class="v" id="tMudasir" style="color:#ec4899">0</div><div class="l">Mudasir</div></div>
+<div class="stat" style="border-left-color:#f97316"><div class="v" id="tShahbaz" style="color:#f97316">0</div><div class="l">Shahbaz</div></div>
+</div>
+
+<script>
+'use strict';
+var SC={'complete':'#22c55e','completed':'#22c55e','pending':'#eab308','in progress':'#3b82f6','in-progress':'#3b82f6','inprogress':'#3b82f6','partially completed':'#f59e0b','partial':'#f59e0b','partially complete':'#f59e0b'};
+var SC_LBL={'#22c55e':'Completed','#eab308':'Pending','#3b82f6':'In Progress','#f59e0b':'Partially Completed'};
+var CC=['#00c9a7','#3b82f6','#f59e0b','#ef4444','#a855f7','#ec4899','#06b6d4','#84cc16','#f97316','#6366f1'];
+
+var allRows=[],pdfMap={},jobData={},pdfFileIds={};
+var clusters=[],lone=[],LM=null,mapMarkers=[];
+var curN=null,excelID='';
+
+function norm(s){return String(s||'').trim().replace(/\s+/g,' ');}
+function jd(n){return jobData[norm(n)]||{};}
+function gSt(n){return jd(n).status||'Pending';}
+function sColor(r){return SC[String(r||'').trim().toLowerCase()]||'#eab308';}
+function sLabel(r){return SC_LBL[sColor(r)]||String(r);}
+function sCol(n){return sColor(gSt(n));}
+function gEst(n){return jd(n).estArea||'';}
+function gAct(n){return jd(n).actualArea||'';}
+function ls(k,v){if(v===undefined){try{return localStorage.getItem(k);}catch(e){return null;}}else{try{localStorage.setItem(k,v);}catch(e){}}}
+function msg(id,t,c){var el=document.getElementById(id);if(!el)return;var col=c==='ok'?'#22c55e':c==='err'?'#ef4444':'#f59e0b';el.innerHTML='<span style="color:'+col+'">'+t+'</span>';}
+
+function pdfFor(n){
+  var k=norm(n);
+  if(pdfMap[k]&&pdfMap[k].url) return{url:pdfMap[k].url,local:true,name:pdfMap[k].name};
+  if(pdfFileIds[k]) return{url:'https://drive.google.com/file/d/'+pdfFileIds[k]+'/view',drive:true,name:k+'.pdf'};
+  return null;
+}
+function openPdf(n){
+  var k=norm(n);
+  if(pdfMap[k]&&pdfMap[k].url){window.open(pdfMap[k].url,'_blank','noopener');return;}
+  if(pdfFileIds[k]){window.open('https://drive.google.com/file/d/'+pdfFileIds[k]+'/view','_blank','noopener');return;}
+  alert('No PDF for: '+k+'\n\nUse PDF section:\n- Local: upload the file\n- Drive Links tab: paste the share link');
+}
+
+// -- GEO -----------------------------------------------------------------------
+function hav(a,b,c,d){var R=6371000,dL=(c-a)*Math.PI/180,dO=(d-b)*Math.PI/180,x=Math.sin(dL/2)*Math.sin(dL/2)+Math.cos(a*Math.PI/180)*Math.cos(c*Math.PI/180)*Math.sin(dO/2)*Math.sin(dO/2);return R*2*Math.atan2(Math.sqrt(x),Math.sqrt(1-x));}
+function parseXY(raw){
+  if(!raw||/not found/i.test(raw)||!raw.trim())return null;
+  var s=raw.replace(/CORD/gi,'').replace(/[NnEeSsWw\u00b0]/g,'').replace(/,/g,' ').trim();
+  var p=s.split(/\s+/).filter(Boolean);
+  if(p.length>=2){var la=parseFloat(p[0]),lo=parseFloat(p[1]);if(!isNaN(la)&&!isNaN(lo)&&la>23&&la<26.5&&lo>54&&lo<57)return{lat:la,lon:lo};}
+  return null;
+}
+function doClusters(rs,maxD,minJ){
+  var pts=rs.map(function(r){return Object.assign({},r,{_c:-1});});var ci=0;
+  for(var i=0;i<pts.length;i++){if(pts[i]._c!==-1)continue;var m=[pts[i]];for(var j=i+1;j<pts.length;j++){if(pts[j]._c!==-1)continue;if(hav(pts[i].lat,pts[i].lon,pts[j].lat,pts[j].lon)<=maxD)m.push(pts[j]);}if(m.length>=minJ){m.forEach(function(p){p._c=ci;});ci++;}}
+  var cl=[];for(var c=0;c<ci;c++)cl.push(pts.filter(function(p){return p._c===c;}));
+  return{clusters:cl,lone:pts.filter(function(p){return p._c===-1;})};
+}
+function ctr(c){return{lat:c.reduce(function(s,p){return s+p.lat;},0)/c.length,lon:c.reduce(function(s,p){return s+p.lon;},0)/c.length};}
+function sprd(c){var m=0;for(var i=0;i<c.length;i++)for(var j=i+1;j<c.length;j++){var d=hav(c[i].lat,c[i].lon,c[j].lat,c[j].lon);if(d>m)m=d;}return m;}
+
+// -- COLUMN FINDER -------------------------------------------------------------
+function findCol(keys,names){
+  for(var i=0;i<names.length;i++){var e=keys.filter(function(k){return k.trim()===names[i].trim();})[0];if(e)return e;}
+  function st(s){return s.toLowerCase().replace(/[^a-z0-9]/g,'');}
+  for(var i=0;i<names.length;i++){var ni=st(names[i]);var f=keys.filter(function(k){var ks=st(k);return ks.indexOf(ni)!==-1||ni.indexOf(ks)!==-1;})[0];if(f)return f;}
+  return '';
+}
+function parseRows(raw){
+  if(!raw||!raw.length)return;
+  var keys=Object.keys(raw[0]);
+  var cN=findCol(keys,['Notification Number','Notif No','Notification']);
+  var cD=findCol(keys,['Date']),cT=findCol(keys,['Notification Type','Type']);
+  var cS=findCol(keys,['Street Name / Number','Street Name','Street']);
+  var cG=findCol(keys,['GIS Coordinates','GIS']);
+  var cA=findCol(keys,['Area / Zone','Area','Zone']);
+  var cDi=findCol(keys,['Approx. Dimension (LXW)','Approx Dimension','Dimension','LXW','Dim']);
+  var cW=findCol(keys,['STATUS','Work Status','Status']);
+  var cE=findCol(keys,['Est. Area','Estimated Area','Est Area','EstArea']);
+  var cAc=findCol(keys,['Actual Area work done','Actual Area','Actual Work','Actual']);
+  allRows=[];
+  raw.forEach(function(r){
+    var xy=parseXY(String(r[cG]||''));if(!xy)return;
+    var n=norm(r[cN]||'');if(!n)return;
+    if(!jobData[n])jobData[n]={};
+    if(cE&&r[cE]!==''&&r[cE]!==undefined&&!jobData[n].estArea)jobData[n].estArea=String(r[cE]);
+    if(cAc&&r[cAc]!==''&&r[cAc]!==undefined&&!jobData[n].actualArea)jobData[n].actualArea=String(r[cAc]);
+    if(cW&&r[cW]&&!jobData[n].status)jobData[n].status=String(r[cW]);
+    // Read Team column from sheet
+    var cTm=findCol(keys,['Team','Team Name','TeamName']);
+    if(cTm&&r[cTm]&&!jobData[n].team){var _t=String(r[cTm]).trim();if(_t)jobData[n].team=_t;}
+    // Read completed date if present
+    var cCd=findCol(keys,['Completed Date','CompletedDate','Completion Date']);
+    if(cCd&&r[cCd]&&!jobData[n].completedDate)jobData[n].completedDate=normDate(String(r[cCd]).trim());
+    allRows.push({notifNo:n,date:String(r[cD]||''),type:String(r[cT]||''),street:String(r[cS]||''),gisRaw:String(r[cG]||''),area:String(r[cA]||''),dim:String(r[cDi]||''),lat:xy.lat,lon:xy.lon});
+  });
+  buildAF();buildMonthFilter();document.getElementById('runBtn').disabled=false;
+}
+function buildAF(){
+  var af=document.getElementById('areaF');
+  var areas=[];allRows.forEach(function(r){if(r.area&&areas.indexOf(r.area)===-1)areas.push(r.area);});areas.sort();
+  af.innerHTML='<option value="">All Areas</option>';
+  areas.forEach(function(a){var o=document.createElement('option');o.value=a;o.textContent=a;af.appendChild(o);});
+}
+
+// -- CSV PARSER ----------------------------------------------------------------
+function parseCSVLine(line){
+  var r=[],cur='',inQ=false;
+  for(var i=0;i<line.length;i++){
+    var c=line[i];
+    if(c==='"'){if(inQ&&line[i+1]==='"'){cur+='"';i++;}else inQ=!inQ;}
+    else if(c===','&&!inQ){r.push(cur);cur='';}
+    else cur+=c;
+  }
+  r.push(cur);return r;
+}
+function loadCSV(text){
+  try{
+    var lines=text.replace(/\r\n/g,'\n').replace(/\r/g,'\n').split('\n').filter(function(l){return l.trim();});
+    if(!lines.length){msg('msgE','\u274C Sheet is empty.','err');return false;}
+    // Auto-detect: tab-separated or comma-separated
+    var delim=lines[0].indexOf('\t')!==-1?'\t':',';
+    function splitLine(line){
+      if(delim==='\t')return line.split('\t').map(function(v){return v.replace(/^"|"$/g,'').trim();});
+      return parseCSVLine(line);
+    }
+    var headers=splitLine(lines[0]);
+    msg('msgE','\u23F3 Columns: '+headers.slice(0,3).join(', ')+'... Parsing...','warn');
+    var raw=[];
+    for(var i=1;i<lines.length;i++){
+      var vals=splitLine(lines[i]);
+      var row={};
+      headers.forEach(function(h,hi){row[h.trim()]=(vals[hi]||'').trim();});
+      raw.push(row);
+    }
+    if(!raw.length){msg('msgE','\u274C No data rows found.','err');return false;}
+    parseRows(raw);
+    if(!allRows.length){msg('msgE','\u274C '+raw.length+' rows read but 0 valid GIS coordinates. Check GIS Coordinates column has data.','err');return false;}
+    return true;
+  }catch(e){msg('msgE','\u274C Error: '+e.message,'err');return false;}
+}
+function loadXlsx(buf){
+  try{
+    var wb=XLSX.read(buf,{type:'array'}),ws=wb.Sheets[wb.SheetNames[0]],raw=XLSX.utils.sheet_to_json(ws,{defval:''});
+    if(!raw.length){alert('Excel empty.');return false;}
+    parseRows(raw);
+    if(!allRows.length){alert('No valid GIS coordinates.\nCheck "GIS Coordinates" column.');return false;}
+    return true;
+  }catch(e){alert('Excel error: '+e.message);return false;}
+}
+
+// -- GOOGLE SHEETS / DRIVE EXCEL LOAD -----------------------------------------
+function xEID(u){
+  var m=/\/spreadsheets\/d\/([a-zA-Z0-9_-]{15,})/.exec(u)||/\/d\/([a-zA-Z0-9_-]{15,})/.exec(u)||/[?&]id=([a-zA-Z0-9_-]{15,})/.exec(u);
+  return m?m[1]:null;
+}
+document.getElementById('btnSE').onclick=function(){
+  var u=document.getElementById('inExcel').value.trim();if(!u){msg('msgE','Paste a link first.','err');return;}
+  var id=xEID(u);if(!id){msg('msgE','\u274C Cannot read file ID.','err');return;}
+  excelID=id;ls('dewa_eu',u);ls('dewa_ei',id);
+  msg('msgE','\u2705 Saved. Click Load Now.','ok');
+};
+document.getElementById('btnLE').onclick=function(){
+  var u=document.getElementById('inExcel').value.trim()||ls('dewa_eu')||'';
+  var id=u?xEID(u):(excelID||ls('dewa_ei')||'');
+  if(!id){msg('msgE','Paste a link and click Save first.','err');return;}
+  excelID=id;fetchSheet(id);
+};
+function fetchSheet(id){
+  msg('msgE','\u23F3 Loading...','warn');
+  // Try all tabs in sequence - gid=823334038 is "DEWA Data (2)" tab
+  var base='https://docs.google.com/spreadsheets/d/'+id;
+  var urls=[
+    base+'/export?format=csv&gid=0',
+    base+'/export?format=csv&gid=823334038',
+    base+'/gviz/tq?tqx=out:csv',
+    base+'/gviz/tq?tqx=out:csv&sheet=DEWA%20Data%20(2)'
+  ];
+  tryCSVurls(urls,0,id);
+}
+function tryCSVurls(urls,i,id){
+  if(i>=urls.length){
+    msg('msgE','\u274C All CSV attempts failed. Check sheet is public. Use Browse to upload manually.','err');
+    return;
+  }
+  msg('msgE','\u23F3 Loading... ('+( i+1)+'/'+urls.length+')','warn');
+  fetch(urls[i])
+    .then(function(r){
+      if(!r.ok)throw new Error('HTTP '+r.status);
+      var ct=r.headers.get('content-type')||'';
+      if(ct.indexOf('text/html')!==-1)throw new Error('Sheet not public - set sharing to Anyone with link');
+      return r.text();
+    })
+    .then(function(txt){
+      if(!txt||txt.trim().length<5)throw new Error('Empty response');
+      var lines=txt.split('\n').filter(function(l){return l.trim();});
+      msg('msgE','\u23F3 Got '+lines.length+' rows, parsing...','warn');
+      var ok=loadCSV(txt);
+      if(ok&&allRows.length>0){
+        msg('msgE','\u2705 Loaded '+allRows.length+' jobs! Click Find Clusters.','ok');
+        document.getElementById('runBtn').disabled=false;
+      } else {
+        msg('msgE','\u26A0 Attempt '+(i+1)+': CSV ok but 0 GIS rows. Trying next...','warn');
+        setTimeout(function(){tryCSVurls(urls,i+1,id);},300);
+      }
+    })
+    .catch(function(e){
+      msg('msgE','\u26A0 Attempt '+(i+1)+' failed: '+e.message,'warn');
+      setTimeout(function(){tryCSVurls(urls,i+1,id);},300);
+    });
+}
+function tryXlsx(arr,i){
+  if(i>=arr.length){msg('msgE','\u274C Failed. Use manual upload below.','err');return;}
+  fetch(arr[i]).then(function(r){if(!r.ok)throw 0;var ct=r.headers.get('content-type')||'';if(ct.indexOf('text/html')!==-1)throw 0;return r.arrayBuffer();})
+  .then(function(buf){var b=new Uint8Array(buf.slice(0,4));if(b[0]!==0x50||b[1]!==0x4B)throw 0;var ok=loadXlsx(buf);if(ok){msg('msgE','\u2705 Loaded '+allRows.length+' jobs.','ok');/* xlCard stays visible */}})
+  .catch(function(){tryXlsx(arr,i+1);});
+}
+
+// -- LOCAL FILE UPLOAD ---------------------------------------------------------
+document.getElementById('xlFile').onchange=function(e){
+  var f=e.target.files[0];if(!f)return;
+  if(f.name.toLowerCase().endsWith('.csv')){
+    var rd=new FileReader();rd.onload=function(ev){var ok=loadCSV(ev.target.result);if(ok)document.getElementById('dzMsg').textContent='\u2705 '+f.name+' \u2014 '+allRows.length+' jobs';};rd.readAsText(f);
+  }else{
+    var rd=new FileReader();rd.onload=function(ev){var ok=loadXlsx(ev.target.result);if(ok)document.getElementById('dzMsg').textContent='\u2705 '+f.name+' \u2014 '+allRows.length+' jobs';};rd.readAsArrayBuffer(f);
+  }
+};
+var dz=document.getElementById('dz');
+dz.ondragover=function(e){e.preventDefault();dz.classList.add('drag');};
+dz.ondragleave=function(){dz.classList.remove('drag');};
+dz.ondrop=function(e){
+  e.preventDefault();dz.classList.remove('drag');var f=e.dataTransfer.files[0];if(!f)return;
+  if(f.name.toLowerCase().endsWith('.csv')){var rd=new FileReader();rd.onload=function(ev){loadCSV(ev.target.result);};rd.readAsText(f);}
+  else{var rd=new FileReader();rd.onload=function(ev){loadXlsx(ev.target.result);};rd.readAsArrayBuffer(f);}
+};
+
+// -- PDF TAB -------------------------------------------------------------------
+function pdfTab(n){
+  var is1=(n===1);
+  document.getElementById('ptab1c').classList.toggle('hidden',!is1);
+  document.getElementById('ptab2c').classList.toggle('hidden',is1);
+  var t1=document.getElementById('ptab1'),t2=document.getElementById('ptab2');
+  t1.style.background=is1?'var(--acc)':'var(--sur2)'; t1.style.color=is1?'#000':'var(--mut)'; t1.style.border=is1?'none':'1px solid var(--brd)';
+  t2.style.background=is1?'var(--sur2)':'var(--acc)'; t2.style.color=is1?'var(--mut)':'#000'; t2.style.border=is1?'1px solid var(--brd)':'none';
+}
+// -- PDF DRIVE LINKS FUNCTIONS ------------------------------------------------
+
+// Tab switcher
+function pdfTab(n){
+  var is1=(n===1);
+  document.getElementById('ptab1c').classList.toggle('hidden',!is1);
+  document.getElementById('ptab2c').classList.toggle('hidden',is1);
+  var t1=document.getElementById('ptab1'),t2=document.getElementById('ptab2');
+  t1.style.background=is1?'var(--acc)':'var(--sur2)'; t1.style.color=is1?'#000':'var(--mut)'; t1.style.border=is1?'none':'1px solid var(--brd)';
+  t2.style.background=is1?'var(--sur2)':'var(--acc)'; t2.style.color=is1?'var(--mut)':'#000'; t2.style.border=is1?'1px solid var(--brd)':'none';
+}
+
+// Copy the sheet formula with the real folder ID pre-filled
+function copyFormula(){
+  var fid='';
+  try{var sf=localStorage.getItem('dewa_f')||'';var m=/\/folders\/([a-zA-Z0-9_-]+)/.exec(sf);if(m)fid=m[1];}catch(e){}
+  var formula='=ARRAYFORMULA({"Notification","FileID";IFERROR(REGEXEXTRACT(FLATTEN(SPLIT(IMPORTDATA("https://drive.google.com/drive/folders/'+fid+'"),"\\"")),"\b([a-zA-Z0-9_\\-]{25,})\b"),"")})';
+  navigator.clipboard.writeText(formula).then(function(){
+    setPasteMsg('\u2705 Formula copied! Paste into cell A1 of a Google Sheet.','ok');
+  }).catch(function(){
+    var ta=document.createElement('textarea');ta.value=formula;document.body.appendChild(ta);ta.select();document.execCommand('copy');document.body.removeChild(ta);
+    setPasteMsg('\u2705 Copied!','ok');
+  });
+}
+
+// -- IMPORT PASTED DATA --------------------------------------------------------
+// Accepts any format: JSON, "notif = fileId", "notif: fileId",
+// "notif.pdf  https://drive.google.com/file/d/ID/view", tab-separated, etc.
+function importPastedData(){
+  var raw=(document.getElementById('pasteJson').value||'').trim();
+  if(!raw){setPasteMsg('Paste some data first.','err');return;}
+  var added=0;
+
+  // Helper: extract Drive file ID from a string
+  function getFileId(s){
+    var m=/\/d\/([a-zA-Z0-9_-]{15,})/.exec(s)||/\/file\/d\/([a-zA-Z0-9_-]{15,})/.exec(s);
+    if(m) return m[1];
+    // bare file ID (long alphanumeric string) - use [^a-zA-Z0-9_-] boundary to preserve trailing dash
+    var m2=/(?:^|[^a-zA-Z0-9_-])([a-zA-Z0-9_-]{25,})(?=[^a-zA-Z0-9_-]|$)/.exec(s);
+    return m2?m2[1]:null;
+  }
+
+  // 1. Try JSON object  {"notif":"fileId",...}
+  try{
+    var start=raw.indexOf('{'), end=raw.lastIndexOf('}');
+    if(start!==-1&&end!==-1){
+      var parsed=JSON.parse(raw.slice(start,end+1));
+      Object.keys(parsed).forEach(function(k){
+        var n=norm(k.replace(/\.pdf$/i,''));
+        var fid=getFileId(parsed[k])||parsed[k];
+        if(n&&fid&&fid.length>=15){pdfFileIds[n]=fid;added++;}
+      });
+      if(added>0){finish(added);return;}
+    }
+  }catch(e){}
+
+  // 2. Line by line
+  raw.split('\n').forEach(function(line){
+    line=line.trim(); if(!line) return;
+
+    // Tab-separated (from Google Sheets copy-paste): notif \t fileId
+    var parts=line.split('\t');
+    if(parts.length>=2){
+      var n=norm(parts[0].replace(/\.pdf$/i,''));
+      var fid=getFileId(parts[1])||parts[1].trim();
+      if(n&&fid&&fid.length>=15&&!/notification/i.test(n)){pdfFileIds[n]=fid;added++;return;}
+    }
+
+    // "notif = fileId"  or  "notif: fileId"  or  "notif, fileId"
+    var m1=/^([\d\w\s\-\/\.]+?)\s*[=:,]\s*(.+)$/.exec(line);
+    if(m1){
+      var n=norm(m1[1].replace(/\.pdf$/i,'').trim());
+      var fid=getFileId(m1[2])||m1[2].trim();
+      if(n&&fid&&fid.length>=15&&!/notification/i.test(n)){pdfFileIds[n]=fid;added++;return;}
+    }
+
+    // "notif.pdf  https://..." - space separated
+    var m2=/^([\d\w\-]+)\.pdf\s+(.+)$/i.exec(line);
+    if(m2){
+      var n=norm(m2[1]);
+      var fid=getFileId(m2[2]);
+      if(n&&fid){pdfFileIds[n]=fid;added++;return;}
+    }
+  });
+
+  if(added>0){finish(added);}
+  else{setPasteMsg('\u274C Could not parse. Use: 2001271364 = fileId (one per line) or JSON.','err');}
+}
+
+function finish(added){
+  saveDrPdfs();renderDrPdfs();reRender();
+  setPasteMsg('\u2705 '+added+' PDF link'+(added!==1?'s':'')+' imported!','ok');
+  document.getElementById('pasteJson').value='';
+}
+function clearAllPdfs(){
+  if(!confirm('Remove all '+Object.keys(pdfFileIds).length+' linked PDFs?')) return;
+  pdfFileIds={};saveDrPdfs();renderDrPdfs();reRender();
+  setPasteMsg('\u2705 Cleared.','ok');
+}
+function setPasteMsg(t,c){
+  var el=document.getElementById('pasteMsg');if(!el)return;
+  var col=c==='ok'?'#22c55e':c==='err'?'#ef4444':'#f59e0b';
+  el.innerHTML='<span style="color:'+col+'">'+t+'</span>';
+}
+
+// -- MANUAL SINGLE ADD ---------------------------------------------------------
+function drFileId(url){var m=/\/d\/([a-zA-Z0-9_-]{10,})/.exec(url)||/id=([a-zA-Z0-9_-]{10,})/.exec(url);return m?m[1]:null;}
+function addDrPdf(){
+  var n=norm(document.getElementById('drN').value);
+  var l=document.getElementById('drL').value.trim();
+  if(!n){alert('Enter a Notification Number.');return;}
+  if(!l){alert('Paste a Google Drive share link.');return;}
+  var fid=drFileId(l);
+  if(!fid){alert('Cannot read file ID.\nLink must look like:\nhttps://drive.google.com/file/d/XXXXX/view');return;}
+  pdfFileIds[n]=fid;saveDrPdfs();renderDrPdfs();reRender();
+  document.getElementById('drN').value='';document.getElementById('drL').value='';
+}
+function delDrPdf(k){delete pdfFileIds[k];saveDrPdfs();renderDrPdfs();reRender();}
+function renderDrPdfs(){
+  var el=document.getElementById('drPdfList');if(!el)return;
+  var keys=Object.keys(pdfFileIds);var lbl=document.getElementById('pdfCountLbl');if(lbl)lbl.textContent=keys.length;el.innerHTML='';
+  if(!keys.length){el.innerHTML='<p style="font-size:12px;color:var(--mut);padding:8px">No PDF links yet.</p>';return;}
+  var MAX=50,shown=keys.slice(0,MAX);
+  shown.forEach(function(k){var v=pdfFileIds[k],fid=(v&&typeof v==='object')?v.id:v;var row=document.createElement('div');row.style.cssText='display:flex;justify-content:space-between;align-items:center;padding:4px 0;border-bottom:1px solid #1e2d45;font-size:11px;font-family:monospace;gap:8px';var sp=document.createElement('span');sp.style.cssText='color:#00c9a7;flex:1;overflow:hidden;text-overflow:ellipsis';sp.textContent=k;var a=document.createElement('a');a.href='https://drive.google.com/file/d/'+fid+'/view';a.target='_blank';a.style.cssText='color:#60a5fa;font-size:10px';a.textContent='open';row.appendChild(sp);row.appendChild(a);el.appendChild(row);});
+  if(keys.length>MAX){var more=document.createElement('div');more.style.cssText='padding:8px 0;font-size:11px;color:#60a5fa;text-align:center';more.textContent='\u2713 '+(keys.length-MAX)+' more ('+keys.length+' total PDFs)';el.appendChild(more);}
+}
+function saveDrPdfs(){try{ls('dewa_pids',JSON.stringify(pdfFileIds));}catch(e){}}
+function loadDrPdfs(){try{var s=ls('dewa_pids');if(s)Object.assign(pdfFileIds,JSON.parse(s));}catch(e){}}
+
+// -- APPS SCRIPT SCANNER (method 3) --------------------------------------------
+function scanFolder(){
+  var url=(document.getElementById('gasUrl').value||'').trim();
+  if(!url){setScanMsg('Paste your Apps Script Web App URL first.','err');return;}
+  try{localStorage.setItem('dewa_gas_url',url);}catch(e){}
+  setScanMsg('\u23F3 Scanning\u2026','warn');
+  fetch(url)
+    .then(function(r){if(!r.ok)throw new Error('HTTP '+r.status);return r.json();})
+    .then(function(data){
+      var keys=Object.keys(data);if(!keys.length){setScanMsg('\u26A0 No PDFs found.','err');return;}
+      var added=0;
+      keys.forEach(function(k){var nk=norm(k.replace(/\.pdf$/i,'').trim());if(!pdfFileIds[nk])added++;pdfFileIds[nk]=data[k];});
+      saveDrPdfs();renderDrPdfs();reRender();
+      setScanMsg('\u2705 '+keys.length+' PDFs indexed ('+added+' new).','ok');
+    })
+    .catch(function(e){setScanMsg('\u274C '+e.message,'err');});
+}
+function setScanMsg(t,c){
+  var el=document.getElementById('scanMsg');if(!el)return;
+  var col=c==='ok'?'#22c55e':c==='err'?'#ef4444':'#f59e0b';
+  el.innerHTML='<span style="color:'+col+'">'+t+'</span>';
+}
+function showGasCode(){
+  var fid='';
+  try{var sf=localStorage.getItem('dewa_f')||'';var m=/\/folders\/([a-zA-Z0-9_-]+)/.exec(sf);if(m)fid=m[1];}catch(e){}
+  if(!fid)fid='YOUR_FOLDER_ID';
+  var code='function doGet(e) {\n'+
+    '  var folderId = \''+fid+'\';\n'+
+    '  var folder = DriveApp.getFolderById(folderId);\n'+
+    '  var files = folder.getFiles();\n'+
+    '  var result = {};\n'+
+    '  while (files.hasNext()) {\n'+
+    '    var file = files.next();\n'+
+    '    var name = file.getName();\n'+
+    '    if (name.toLowerCase().indexOf(\'.pdf\') !== -1) {\n'+
+    '      result[name.replace(/\\.pdf$/i,\'\').trim()] = file.getId();\n'+
+    '    }\n'+
+    '  }\n'+
+    '  return ContentService\n'+
+    '    .createTextOutput(JSON.stringify(result))\n'+
+    '    .setMimeType(ContentService.MimeType.JSON);\n'+
+    '}';
+  var manifest='{\n  "timeZone":"Asia/Dubai",\n  "runtimeVersion":"V8",\n  "oauthScopes":["https://www.googleapis.com/auth/drive.readonly"],\n  "webapp":{"executeAs":"USER_DEPLOYING","access":"ANYONE"}\n}';
+  var ov=document.createElement('div');
+  ov.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:9999;display:flex;align-items:center;justify-content:center;padding:16px';
+  var box=document.createElement('div');
+  box.style.cssText='background:var(--sur);border:1px solid var(--brd);border-radius:14px;width:100%;max-width:620px;padding:22px;max-height:90vh;overflow-y:auto;position:relative';
+  var cb=document.createElement('button');cb.innerHTML='&times;';cb.style.cssText='position:absolute;top:12px;right:14px;background:none;border:none;color:var(--txt);font-size:22px;cursor:pointer';cb.onclick=function(){document.body.removeChild(ov);};box.appendChild(cb);
+  function section(label,content,color){
+    var lbl=document.createElement('div');lbl.style.cssText='font-size:11px;font-weight:700;color:'+color+';font-family:monospace;margin:14px 0 5px';lbl.textContent=label;box.appendChild(lbl);
+    var pre=document.createElement('pre');pre.style.cssText='background:var(--bg);border:1px solid var(--brd);border-radius:8px;padding:12px;font-size:11px;font-family:monospace;color:'+color+';white-space:pre-wrap;position:relative;line-height:1.6';pre.textContent=content;
+    var btn=document.createElement('button');btn.textContent='Copy';btn.style.cssText='position:absolute;top:7px;right:7px;background:'+color+';color:#000;border:none;padding:4px 12px;border-radius:5px;font-size:11px;font-weight:700;cursor:pointer';
+    btn.onclick=function(){navigator.clipboard.writeText(content).then(function(){btn.textContent='\u2705';setTimeout(function(){btn.textContent='Copy';},2000);}).catch(function(){});};
+    pre.appendChild(btn);box.appendChild(pre);
+  }
+  var t=document.createElement('div');t.style.cssText='font-size:14px;font-weight:700;color:var(--acc);font-family:monospace;margin-bottom:4px';t.textContent='Apps Script Setup';box.appendChild(t);
+  var info=document.createElement('div');info.style.cssText='font-size:12px;color:var(--mut);margin-bottom:4px;line-height:1.8';
+  info.innerHTML='1. <a href="https://script.google.com" target="_blank" style="color:var(--acc)">script.google.com</a> \u2192 New Project<br>2. Settings \u2699 \u2192 tick "Show appsscript.json" \u2192 back to Editor<br>3. Click appsscript.json tab \u2192 paste FILE 1 \u2192 Save<br>4. Click Code.gs tab \u2192 paste FILE 2 \u2192 Save<br>5. Deploy \u2192 New Deployment \u2192 Web App \u2192 Execute as: Me \u2192 Anyone \u2192 Deploy \u2192 Authorize access \u2192 Allow<br>6. Copy Web App URL \u2192 paste in Scan box';
+  box.appendChild(info);
+  section('FILE 1 - appsscript.json',manifest,'#3b82f6');
+  section('FILE 2 - Code.gs',code,'#84cc16');
+  ov.appendChild(box);document.body.appendChild(ov);
+}
+
+
+// -- LOCAL PDF -----------------------------------------------------------------
+document.getElementById('pdfFile').onchange=function(e){addLocalPdfs(e.target.files);};
+var pdz=document.getElementById('pdfDz');
+pdz.ondragover=function(e){e.preventDefault();pdz.style.borderColor='var(--acc)';};
+pdz.ondragleave=function(){pdz.style.borderColor='';};
+pdz.ondrop=function(e){e.preventDefault();pdz.style.borderColor='';addLocalPdfs(e.dataTransfer.files);};
+function addLocalPdfs(files){
+  var added=[];
+  Array.from(files).forEach(function(f){
+    if(!f.name.toLowerCase().endsWith('.pdf'))return;
+    var k=norm(f.name.replace(/\.pdf$/i,''));
+    if(pdfMap[k]&&pdfMap[k].url)URL.revokeObjectURL(pdfMap[k].url);
+    pdfMap[k]={name:f.name,url:URL.createObjectURL(f)};
+    added.push(k);
+  });
+  renderPdfs();reRender();
+  // Remind admin that local PDFs need Drive links for the team file
+  if(added.length>0){
+    var missing=added.filter(function(k){return !pdfFileIds[k];});
+    if(missing.length>0){
+      setTimeout(function(){
+        if(confirm(
+          '\u2705 '+added.length+' PDF(s) loaded for preview.\n\n'+
+          '\u26A0\uFE0F Local PDFs only work in THIS admin browser session.\n\n'+
+          'To share PDFs with your team, add Google Drive share links in the\n'+
+          '\"Drive Links\" tab of the PDF section.\n\n'+
+          'Switch to Drive Links tab now?'
+        )){pdfTab(2);}
+      },300);
+    }
+  }
+}
+function renderPdfs(){
+  var el=document.getElementById('pchips'),badge=document.getElementById('pdfBadge'),ks=Object.keys(pdfMap);el.innerHTML='';
+  if(!ks.length){badge.classList.add('hidden');return;}
+  badge.style.display='inline-block';badge.classList.remove('hidden');badge.textContent='\uD83D\uDCC4 '+ks.length+' PDF'+(ks.length!==1?'s':'')+' loaded';
+  ks.slice(0,50).forEach(function(k){var d=document.createElement('div');d.className='chip';d.innerHTML='\uD83D\uDCC4 '+pdfMap[k].name+' <button onclick="delPdf('+JSON.stringify(k)+')">\u2715</button>';el.appendChild(d);});
+  if(ks.length>50){var d=document.createElement('div');d.className='chip';d.style.cssText='background:rgba(245,158,11,.1);border-color:rgba(245,158,11,.3);color:var(--warn)';d.textContent='+'+(ks.length-50)+' more';el.appendChild(d);}
+}
+function delPdf(k){if(pdfMap[k]&&pdfMap[k].url)URL.revokeObjectURL(pdfMap[k].url);delete pdfMap[k];renderPdfs();reRender();}
+
+// -- PAGE LOAD -----------------------------------------------------------------
+
+// -- SHEET WRITE-BACK --------------------------------------------------------
+var writebackUrl = 'https://script.google.com/macros/s/AKfycbzRqwDnZlfAR8cDwSacukFgWDOgh7QRM0t_CfM2FJEEHzTKbTjp_h-12FbaS99S86TM/exec';
+function setWritebackUrl(url){
+  writebackUrl = url.trim();
+  try{ localStorage.setItem('dewa_wb_url', writebackUrl); }catch(e){}
+  msg('msgWB', writebackUrl ? '\u2705 Write-back URL saved.' : '', 'ok');
+}
+function writeBackToSheet(notifNo, status, team, date){
+  if(!writebackUrl) return; // silent if not configured
+  var payload = JSON.stringify({notifNo:notifNo, status:status, team:team, date:date});
+  fetch(writebackUrl, {
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body: payload
+  }).then(function(r){ return r.json(); })
+    .then(function(d){
+      if(d.ok) console.log('Sheet updated: '+notifNo);
+      else console.warn('Sheet update failed: '+notifNo, d.msg);
+    })
+    .catch(function(e){ console.warn('Write-back error:', e.message); });
+}
+
+function showDailySummary(){
+  var _td=getTodayStr();
+  var all=[].concat.apply([],clusters).concat(lone);
+  var done=all.filter(function(j){return jd(j.notifNo).completedDate===_td;});
+  if(!done.length){alert('No jobs completed today ('+_td+').');return;}
+  var tc={Mubarak:'#3b82f6',Yousaf:'#f59e0b',Azeem:'#a855f7',Mudasir:'#ec4899',Shahbaz:'#f97316'};
+  var gr={Mubarak:[],Yousaf:[],Azeem:[],Mudasir:[],Shahbaz:[],Other:[]};
+  done.forEach(function(j){var t=jd(j.notifNo).team||'Other';if(gr[t])gr[t].push(j);else gr.Other.push(j);});
+  var wa=['DEWA Daily Summary - '+_td,'Total: '+done.length+' jobs',''];
+  var hr='';
+  ['Mubarak','Yousaf','Azeem','Mudasir','Shahbaz','Other'].forEach(function(t){
+    if(!gr[t]||!gr[t].length)return;
+    var col=tc[t]||'#94a3b8';
+    wa.push(t+' ('+gr[t].length+' jobs):');
+    gr[t].forEach(function(j){wa.push('  '+j.notifNo+' - '+(j.street||j.area||'-'));});
+    wa.push('');
+    hr+='<p><b style="color:'+col+'">'+t+' ('+gr[t].length+')</b></p>'
+      +gr[t].map(function(j){return '<p style="font-size:11px;color:#94a3b8;margin:2px">'+j.notifNo+' '+(j.street||j.area||'')+'</p>';}).join('');
+  });
+  var waTxt=wa.join('\n');
+  var ov=document.createElement('div');ov.id='sumModal';
+  ov.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:9999;display:flex;align-items:center;justify-content:center;padding:16px';
+  var inn=document.createElement('div');
+  inn.style.cssText='background:#111827;border:1px solid #1e2d45;border-radius:14px;width:100%;max-width:480px;max-height:80vh;display:flex;flex-direction:column';
+  var hd=document.createElement('div');hd.style.cssText='padding:12px;border-bottom:1px solid #1e2d45;display:flex;justify-content:space-between;align-items:center';
+  hd.innerHTML='<b style="color:#e2e8f0">Summary '+_td+'</b>';
+  var cb=document.createElement('button');cb.textContent='x';cb.style.cssText='background:none;border:none;color:#94a3b8;font-size:18px;cursor:pointer';cb.onclick=function(){ov.remove();};hd.appendChild(cb);
+  var bd=document.createElement('div');bd.style.cssText='padding:14px;overflow-y:auto;flex:1';
+  bd.innerHTML='<p style="color:#22c55e;font-family:monospace">Today: '+done.length+' jobs</p>'+hr;
+  var ft=document.createElement('div');ft.style.cssText='padding:12px;border-top:1px solid #1e2d45';
+  var wb=document.createElement('button');wb.textContent='Copy for WhatsApp';wb.style.cssText='width:100%;padding:10px;background:rgba(37,211,102,.15);border:1px solid rgba(37,211,102,.3);color:#25d366;border-radius:8px;cursor:pointer;font-weight:700';
+  wb.onclick=function(){var ta=document.createElement('textarea');ta.value=waTxt;ta.style.position='fixed';ta.style.top='-9999px';document.body.appendChild(ta);ta.select();document.execCommand('copy');document.body.removeChild(ta);this.textContent='Copied!';var b=this;setTimeout(function(){b.textContent='Copy for WhatsApp';},2000);};
+  ft.appendChild(wb);inn.appendChild(hd);inn.appendChild(bd);inn.appendChild(ft);
+  var ex=document.getElementById('sumModal');if(ex)ex.remove();document.body.appendChild(ov);
+  ov.onclick=function(e){if(e.target===ov)ov.remove();};
+}
+
+var _activeMonth='';
+function normDate(s){
+  if(!s)return'';s=String(s).trim();
+  var mL=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  if(/^\d{1,2} [A-Za-z]{3} \d{4}$/.test(s))return s;
+  var a=s.match(/^(\d{1,2})[.\/](\d{1,2})[.\/](\d{4})/);
+  if(a)return parseInt(a[1],10)+' '+mL[parseInt(a[2],10)-1]+' '+a[3];
+  var b=s.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if(b)return parseInt(b[3],10)+' '+mL[parseInt(b[2],10)-1]+' '+b[1];
+  try{var d=new Date(s);if(!isNaN(d.getTime()))return d.getDate()+' '+mL[d.getMonth()]+' '+d.getFullYear();}catch(e){}
+  return s;
+}
+function getJobMonthKey(d){if(!d)return'';var p=d.split('.');return p.length<3?'':p[2]+'-'+p[1];}
+function getMonthLabel(mm,yy){var n=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];return(n[parseInt(mm,10)-1]||mm)+' '+yy;}
+function buildMonthFilter(){
+  var mf=document.getElementById('monthF');if(!mf)return;
+  var ms=[];
+  allRows.forEach(function(r){if(!r.date)return;var p=r.date.split('.');if(p.length<3)return;var k=p[2]+'-'+p[1];if(ms.indexOf(k)===-1)ms.push(k);});
+  ms.sort().reverse();
+  mf.innerHTML='<option value="">All Months</option>';
+  ms.forEach(function(k){var p=k.split('-');var o=document.createElement('option');o.value=k;o.textContent=getMonthLabel(p[1],p[0]);mf.appendChild(o);});
+}
+function setMonthFilter(v){_activeMonth=v;doFilter();}
+function showTodaySummary(){
+  var _td=getTodayStr();var all=[].concat.apply([],clusters).concat(lone);
+  var done=all.filter(function(j){return normDate(jd(j.notifNo).completedDate)===normDate(_td);});
+  if(!done.length){alert('No jobs completed today ('+_td+').');return;}
+  var tc={Mubarak:'#3b82f6',Yousaf:'#f59e0b',Azeem:'#a855f7',Mudasir:'#ec4899',Shahbaz:'#f97316'};
+  var gr={Mubarak:0,Yousaf:0,Azeem:0,Mudasir:0,Shahbaz:0,Other:0};
+  var ga={Mubarak:0,Yousaf:0,Azeem:0,Mudasir:0,Shahbaz:0,Other:0};
+  done.forEach(function(j){var d=jd(j.notifNo);var t=(d.team||'').trim()||'Other';var a=parseFloat(d.actualArea)||0;if(gr.hasOwnProperty(t)){gr[t]++;ga[t]+=a;}else{gr.Other++;ga.Other+=a;}});
+  var totalArea=0;var wa=['DEWA Daily Summary','Date: '+_td,'Total: '+done.length+' jobs',''];
+  var ex=document.getElementById('tSumM');if(ex)ex.remove();
+  var ov=document.createElement('div');ov.id='tSumM';
+  ov.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:9999;display:flex;align-items:center;justify-content:center;padding:16px';
+  var inn=document.createElement('div');inn.style.cssText='background:#111827;border:1px solid #1e2d45;border-radius:14px;width:100%;max-width:440px;max-height:85vh;display:flex;flex-direction:column';
+  var hd=document.createElement('div');hd.style.cssText='padding:14px;border-bottom:1px solid #1e2d45;display:flex;justify-content:space-between;align-items:center';
+  var ht=document.createElement('b');ht.textContent='Today Summary';ht.style.color='#e2e8f0';
+  var cb=document.createElement('button');cb.textContent='x';cb.style.cssText='background:none;border:none;color:#94a3b8;font-size:20px;cursor:pointer';cb.onclick=function(){ov.remove();};
+  hd.appendChild(ht);hd.appendChild(cb);
+  var bd=document.createElement('div');bd.style.cssText='padding:14px;overflow-y:auto;flex:1';
+  var hero=document.createElement('div');hero.style.cssText='text-align:center;padding:14px;margin-bottom:14px;background:rgba(34,197,94,.08);border:1px solid rgba(34,197,94,.2);border-radius:10px';
+  var dt=document.createElement('div');dt.textContent=_td;dt.style.cssText='font-size:11px;color:#94a3b8';
+  var big=document.createElement('div');big.textContent=done.length;big.style.cssText='font-size:44px;font-weight:800;color:#22c55e';
+  var sub=document.createElement('div');sub.style.cssText='font-size:12px;color:#94a3b8';
+  hero.appendChild(dt);hero.appendChild(big);hero.appendChild(sub);bd.appendChild(hero);
+  var tbl=document.createElement('table');tbl.style.cssText='width:100%;border-collapse:collapse';
+  var hr=document.createElement('tr');
+  ['TEAM','JOBS','AREA m2'].forEach(function(h,i){var th=document.createElement('th');th.textContent=h;th.style.cssText='padding:8px 14px;color:#94a3b8;font-size:11px;border-bottom:2px solid #1e2d45;text-align:'+(i===0?'left':'center');hr.appendChild(th);});
+  tbl.appendChild(hr);
+  ['Mubarak','Yousaf','Azeem','Mudasir','Shahbaz','Other'].forEach(function(t){
+    if(!gr[t])return;var col=tc[t]||'#94a3b8';var a=ga[t];totalArea+=a;
+    wa.push(t+': '+gr[t]+' jobs, '+a.toFixed(1)+' m2');
+    var tr=document.createElement('tr');
+    var c1=document.createElement('td');c1.textContent=t;c1.style.cssText='padding:10px 14px;color:'+col+';font-weight:700;border-bottom:1px solid #1e2d45';
+    var c2=document.createElement('td');c2.textContent=gr[t];c2.style.cssText='padding:10px 14px;text-align:center;font-size:22px;font-weight:800;color:'+col+';border-bottom:1px solid #1e2d45';
+    var c3=document.createElement('td');c3.textContent=a.toFixed(1);c3.style.cssText='padding:10px 14px;text-align:center;font-weight:700;color:'+col+';border-bottom:1px solid #1e2d45';
+    tr.appendChild(c1);tr.appendChild(c2);tr.appendChild(c3);tbl.appendChild(tr);
+  });
+  sub.textContent='Jobs / '+totalArea.toFixed(1)+' m2';wa.push('Total Area: '+totalArea.toFixed(1)+' m2');
+  var fr=document.createElement('tr');fr.style.cssText='border-top:2px solid var(--acc)';
+  var f1=document.createElement('td');f1.textContent='TOTAL';f1.style.cssText='padding:10px 14px;color:#e2e8f0;font-weight:700';
+  var f2=document.createElement('td');f2.textContent=done.length;f2.style.cssText='padding:10px 14px;text-align:center;font-size:24px;font-weight:800;color:#22c55e';
+  var f3=document.createElement('td');f3.textContent=totalArea.toFixed(1);f3.style.cssText='padding:10px 14px;text-align:center;font-size:18px;font-weight:800;color:#00c9a7';
+  fr.appendChild(f1);fr.appendChild(f2);fr.appendChild(f3);tbl.appendChild(fr);bd.appendChild(tbl);
+  var ft=document.createElement('div');ft.style.cssText='padding:12px;border-top:1px solid #1e2d45';
+  var wb=document.createElement('button');wb.textContent='Copy for WhatsApp';
+  wb.style.cssText='width:100%;padding:10px;background:rgba(37,211,102,.15);border:1px solid rgba(37,211,102,.3);color:#25d366;border-radius:8px;cursor:pointer;font-weight:700;font-size:13px';
+  wb.onclick=function(){var ta=document.createElement('textarea');ta.value=wa.join('\n');ta.style.position='fixed';ta.style.top='-9999px';document.body.appendChild(ta);ta.select();document.execCommand('copy');document.body.removeChild(ta);this.textContent='Copied!';var b=this;setTimeout(function(){b.textContent='Copy for WhatsApp';},2000);};
+  ft.appendChild(wb);inn.appendChild(hd);inn.appendChild(bd);inn.appendChild(ft);
+  ov.appendChild(inn);document.body.appendChild(ov);
+  ov.onclick=function(e){if(e.target===ov)ov.remove();};
+}
+window.addEventListener('DOMContentLoaded',function(){
+  if(typeof BAKED_JD!=='undefined')Object.assign(jobData,BAKED_JD);
+  if(typeof BAKED_PDF_IDS!=='undefined')Object.assign(pdfFileIds,BAKED_PDF_IDS);
+  if(typeof BAKED_R!=='undefined'&&BAKED_R.length){
+    allRows=BAKED_R;buildAF();document.getElementById('runBtn').disabled=false;
+  }
+  loadDrPdfs();renderDrPdfs();
+  try{ var wu=localStorage.getItem('dewa_wb_url'); if(wu){ writebackUrl=wu; var wi=document.getElementById('inWB'); if(wi)wi.value=wu; } }catch(e){}
+  try{var gu=localStorage.getItem('dewa_gas_url');if(gu){var ge=document.getElementById('gasUrl');if(ge)ge.value=gu;}}catch(e){}
+
+  // -- TEAM MODE --------------------------------------------------------------
+  if(typeof BAKED_SH!=='undefined'&&BAKED_SH){
+    document.getElementById('adminSec').classList.add('hidden');
+    document.getElementById('btnSh').classList.add('hidden');
+    var b=document.getElementById('modeBadge');
+    b.textContent='TEAM VIEW';b.style.background='rgba(59,130,246,.15)';
+    b.style.borderColor='rgba(59,130,246,.4)';b.style.color='#3b82f6';
+    // Show all result containers BEFORE map init
+    ['mgrid','sfb','legend'].forEach(function(id){var el=document.getElementById(id);if(el)el.classList.remove('hidden');});
+    if(allRows.length){
+      // Double rAF + 150ms ensures map container is painted before Leaflet measures it
+      requestAnimationFrame(function(){requestAnimationFrame(function(){setTimeout(function(){
+        doCluster();
+      },150);});});
+    } else {
+      alert('No data. Admin must regenerate the shared file.');
+    }
+    return;
+  }
+
+  // -- ADMIN MODE ------------------------------------------------------------
+  var eu=ls('dewa_eu'),ei=ls('dewa_ei');
+  if(eu)document.getElementById('inExcel').value=eu;
+  if(ei){excelID=ei;}
+});
+
+// -- CLUSTERING ----------------------------------------------------------------
+document.getElementById('runBtn').onclick=function(){
+  ['statsBar','teamBar','mgrid','sfb','legend'].forEach(function(id){var el=document.getElementById(id);if(el)el.classList.remove('hidden');});
+  setTimeout(function(){doCluster();},50);
+};
+function doCluster(){
+  var maxD=parseInt(document.getElementById('distIn').value)||300;
+  var minJ=parseInt(document.getElementById('minJ').value)||2;
+  var af=document.getElementById('areaF').value;
+  var rs=af?allRows.filter(function(r){return r.area===af;}):allRows;
+  if(!rs.length){alert('No jobs. Load data first.');return;}
+  var res=doClusters(rs,maxD,minJ);
+  clusters=res.clusters;lone=res.lone;
+  var all=[].concat.apply([],clusters).concat(lone);
+  var elTotal=document.getElementById('sTotal'); if(elTotal) elTotal.textContent=rs.length;
+  var elBadge=document.getElementById('clBadge'); if(elBadge) elBadge.textContent=clusters.length;
+  var _sj=_activeMonth?all.filter(function(j){return getJobMonthKey(j.date)===_activeMonth;}):all;
+  updStats(_sj);
+  if(_activeMonth){
+    var _fc2=clusters.map(function(c){return c.filter(function(j){return getJobMonthKey(j.date)===_activeMonth;});}).filter(function(c){return c.length;});
+    var _ln2=lone.filter(function(j){return getJobMonthKey(j.date)===_activeMonth;});
+    initMap();drawMap(_fc2,_ln2);renderList(_fc2,_ln2);
+  }else{
+    initMap();drawMap(clusters,lone);renderList(clusters,lone);
+  }
+}
+function updStats(jobs){
+  var e=0,a=0;
+  jobs.forEach(function(j){e+=parseFloat(gEst(j.notifNo))||0;a+=parseFloat(gAct(j.notifNo))||0;});
+  var pa=Math.max(0,e-a),pct=e>0?((a/e)*100).toFixed(1):'0';
+  function setEl(id,val){var el=document.getElementById(id);if(el)el.textContent=val;}
+  setEl('sTotal', jobs.length);
+  setEl('sComp', jobs.filter(function(j){return sColor(gSt(j.notifNo))==='#22c55e';}).length);
+  setEl('sPend', jobs.filter(function(j){return sColor(gSt(j.notifNo))==='#eab308';}).length);
+  setEl('sEst',  e.toFixed(1));
+  setEl('sDone', a.toFixed(1));
+  setEl('sPArea',pa.toFixed(1));
+  setEl('sPct',  pct+'%');
+  var tb=document.getElementById('teamBar');if(tb)tb.classList.remove('hidden');
+  ['Mubarak','Yousaf','Azeem','Mudasir','Shahbaz'].forEach(function(t){
+    var cnt=jobs.filter(function(j){return (jd(j.notifNo).team||'').trim().toLowerCase()===t.toLowerCase();}).length;
+    setEl('t'+t,cnt);
+  });
+}
+
+// -- MAP -----------------------------------------------------------------------
+function initMap(){
+  if(!LM){
+    LM=L.map('map',{zoomControl:true});
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{attribution:'&copy; OpenStreetMap',maxZoom:19}).addTo(LM);
+  }
+  LM.invalidateSize();
+}
+function drawMap(cl,ln){
+  mapMarkers.forEach(function(m){try{LM.removeLayer(m);}catch(e){}});mapMarkers=[];
+  var pts=[];
+  cl.forEach(function(c,ci){
+    var cc=CC[ci%CC.length],ct=ctr(c),sp=sprd(c);
+    var ring=L.circle([ct.lat,ct.lon],{radius:Math.max(sp/2,80),color:cc,fillColor:cc,fillOpacity:.06,weight:1.5,dashArray:'5,5'}).addTo(LM);
+    mapMarkers.push(ring);c.forEach(function(job){addDot(job,cc,ci+1,pts);});
+  });
+  ln.forEach(function(job){addDot(job,sCol(job.notifNo),null,pts);});
+  if(pts.length)LM.fitBounds(pts,{padding:[50,50]});
+  setTimeout(function(){LM.invalidateSize();},200);
+}
+function addDot(job,rc,cn,pts){
+  var sc=sCol(job.notifNo),hp=!!pdfFor(job.notifNo),sz=cn?22:14,lbl=cn?String(cn):'';
+  var pB=hp?'<div style="position:absolute;top:-4px;right:-4px;background:#fff;border-radius:50%;width:11px;height:11px;font-size:7px;line-height:11px;text-align:center;box-shadow:0 0 3px rgba(0,0,0,.5)">P</div>':'';
+  var dH='<div style="background:'+sc+';border:2.5px solid rgba(255,255,255,.9);width:'+sz+'px;height:'+sz+'px;border-radius:50%;box-shadow:0 2px 8px rgba(0,0,0,.5),0 0 0 2px '+sc+'44;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;color:#000;position:relative">'+lbl+pB+'</div>';
+  var ico=L.divIcon({html:dH,className:'',iconSize:[sz,sz],iconAnchor:[sz/2,sz/2]});
+  var mk=L.marker([job.lat,job.lon],{icon:ico});
+  (function(j,ringC,cnum){
+    mk.on('click',function(ev){
+      L.DomEvent.stopPropagation(ev);
+      L.popup({maxWidth:320,autoPan:true}).setLatLng([j.lat,j.lon]).setContent(buildPopup(j,ringC,cnum)).openOn(LM);
+    });
+  })(job,rc,cn);
+  mk.addTo(LM);mapMarkers.push(mk);pts.push([job.lat,job.lon]);
+}
+function buildPopup(job,rc,cn){
+  var sv=gSt(job.notifNo),sc=sColor(sv),lbl=sLabel(sv);
+  var e=gEst(job.notifNo),a=gAct(job.notifNo);
+  var bal=(e&&a)?((parseFloat(e)-parseFloat(a)).toFixed(1)+' sqm'):'\u2014';
+  var hp=!!pdfFor(job.notifNo);
+  var W=document.createElement('div');W.style.minWidth='220px';
+  if(cn){var h=document.createElement('div');h.style.cssText='font-size:10px;color:'+rc+';font-family:monospace;font-weight:700;margin-bottom:5px';h.textContent='CLUSTER '+cn;W.appendChild(h);}
+  var ref=document.createElement('div');ref.style.cssText='font-size:15px;font-weight:700;font-family:monospace;color:#00c9a7;margin-bottom:6px;cursor:pointer;text-decoration:underline dotted';ref.textContent=job.notifNo;
+  (function(n){ref.onclick=function(){LM.closePopup();setTimeout(function(){openModal(n);},60);};})(job.notifNo);W.appendChild(ref);
+  var sb=document.createElement('div');sb.style.cssText='margin-bottom:6px;display:flex;align-items:center;gap:6px';
+  sb.innerHTML='<div style="width:10px;height:10px;border-radius:50%;background:'+sc+'"></div><span style="font-family:monospace;font-size:11px;padding:2px 8px;border-radius:12px;background:'+sc+'22;color:'+sc+'">'+lbl+'</span>';W.appendChild(sb);
+  [['&#128205;',job.street],['&#127960;',job.area],['&#128207;',job.dim]].forEach(function(r){if(r[1]){var d=document.createElement('div');d.style.cssText='font-size:12px;color:#64748b;margin-bottom:2px';d.innerHTML=r[0]+' '+r[1];W.appendChild(d);}});
+  if(e){var d=document.createElement('div');d.style.cssText='font-size:11px;font-family:monospace;color:#64748b;margin-top:5px;padding:4px 6px;background:#1a2235;border-radius:4px';d.textContent='Est:'+e+' Done:'+(a||'\u2014')+' Bal:'+bal;W.appendChild(d);}
+  var acts=document.createElement('div');acts.style.cssText='display:flex;gap:6px;margin-top:8px;flex-wrap:wrap';
+  var det=document.createElement('span');det.className='popen';det.innerHTML='&#9999; Details';
+  (function(n){det.onclick=function(){LM.closePopup();setTimeout(function(){openModal(n);},60);};})(job.notifNo);acts.appendChild(det);
+  if(hp){var pb=document.createElement('span');pb.className='ppdf';pb.innerHTML='&#128196; PDF';(function(n){pb.onclick=function(){openPdf(n);};})(job.notifNo);acts.appendChild(pb);}
+  else{var np=document.createElement('span');np.style.cssText='font-size:11px;color:#64748b;padding-top:6px';np.textContent='No PDF';acts.appendChild(np);}
+  var gm=document.createElement('span');gm.style.cssText='display:inline-flex;align-items:center;gap:4px;background:rgba(34,197,94,.1);border:1px solid rgba(34,197,94,.3);color:#22c55e;padding:5px 10px;border-radius:8px;font-size:12px;cursor:pointer;font-family:monospace;font-weight:600';gm.innerHTML='&#128506; Maps';
+  (function(la,lo){gm.onclick=function(){window.open('https://www.google.com/maps/search/?api=1&query='+la+','+lo,'_blank');};})(job.lat,job.lon);acts.appendChild(gm);
+  W.appendChild(acts);return W;
+}
+
+// -- CLUSTER LIST --------------------------------------------------------------
+// Clicking notification number - flyTo pin (no modal)
+// Separate Details button to open modal
+function renderList(cl,ln){
+  var el=document.getElementById('clList');el.innerHTML='';
+  cl.forEach(function(c,ci){
+    var cc=CC[ci%CC.length],sp=Math.round(sprd(c));
+    var card=document.createElement('div');card.className='ccard';
+    var jh='';
+    c.forEach(function(job){
+      var sc=sCol(job.notifNo),hp=!!pdfFor(job.notifNo);
+      jh+='<div class="jr">'+
+        '<div class="jdot" style="background:'+sc+'"></div>'+
+        '<span class="jn" style="color:'+cc+'" data-fly="'+job.lat+'|'+job.lon+'" title="Click to fly to pin on map">'+job.notifNo+'</span>'+
+        '<span class="js">'+(job.street||job.area||'\u2014')+'</span>'+
+        '<button class="pb'+(hp?'':' np')+'" data-pdf="'+job.notifNo+'" title="'+(hp?'Open PDF':'No PDF')+'">&#128196;</button>'+
+        '<button class="pb" data-det="'+job.notifNo+'" title="Details">&#128221;</button>'+
+        '<button class="pb" data-gm="'+job.lat+'|'+job.lon+'" title="Google Maps">&#128506;</button>'+
+        (jd(job.notifNo).completedDate?'<span style="font-size:10px;color:#22c55e;font-family:monospace;margin-left:6px">&#10003; '+jd(job.notifNo).completedDate+(jd(job.notifNo).team?' ('+jd(job.notifNo).team+')':'')+'</span>':'')+
+        '<span class="jd">'+job.dim+'</span></div>';
+    });
+    var zn=(c[0].area||'').split('-').pop().trim();
+    card.innerHTML=
+      '<div class="ch"><div class="cd" style="background:'+cc+'"></div><span class="ctit">Cluster '+(ci+1)+' \u2014 '+zn+'</span><span class="ccnt">'+c.length+' jobs</span></div>'+
+      '<div class="cj"><div style="font-size:10px;color:var(--mut);margin-bottom:4px;font-family:monospace">SPREAD: '+sp+'m</div>'+jh+'</div>';
+    card.querySelector('.ch').onclick=function(){
+      document.querySelectorAll('.ccard').forEach(function(x){x.classList.remove('active');});
+      card.classList.add('active');if(LM)LM.flyTo([ctr(c).lat,ctr(c).lon],15,{duration:0.8});
+    };
+    card.addEventListener('click',function(e){
+      var fly=e.target.getAttribute('data-fly');
+      var pdf=e.target.getAttribute('data-pdf');
+      var det=e.target.getAttribute('data-det');
+      var gm =e.target.getAttribute('data-gm');
+      if(fly&&LM){var p=fly.split('|');LM.flyTo([parseFloat(p[0]),parseFloat(p[1])],19,{duration:0.8});return;}
+      if(pdf&&!e.target.classList.contains('np')){openPdf(pdf);return;}
+      if(det){openModal(det);return;}
+      if(gm){var p=gm.split('|');window.open('https://www.google.com/maps/search/?api=1&query='+p[0]+','+p[1],'_blank');return;}
+    });
+    el.appendChild(card);
+  });
+  if(ln.length){
+    var sec=document.createElement('div');sec.className='ls';
+    sec.innerHTML='<div class="lt">\u26AB '+ln.length+' standalone'+(ln.length!==1?' jobs':' job')+'</div>';
+    ln.forEach(function(job){
+      var sc=sCol(job.notifNo),hp=!!pdfFor(job.notifNo);
+      var row=document.createElement('div');row.className='lr';
+      row.innerHTML=
+        '<div class="jdot" style="background:'+sc+'"></div>'+
+        '<span class="jn" style="font-family:monospace;color:var(--mut);font-size:11px;cursor:pointer;text-decoration:underline dotted" data-fly="'+job.lat+'|'+job.lon+'" title="Click to fly to pin">'+job.notifNo+'</span>'+
+        '<span class="js">'+(job.street||'\u2014')+'</span>'+
+        '<button class="pb'+(hp?'':' np')+'" data-pdf="'+job.notifNo+'" title="'+(hp?'Open PDF':'No PDF')+'">&#128196;</button>'+
+        '<button class="pb" data-det="'+job.notifNo+'" title="Details">&#128221;</button>'+
+        '<button class="pb" data-gm="'+job.lat+'|'+job.lon+'" title="Google Maps">&#128506;</button>'+
+        (jd(job.notifNo).completedDate?'<span style="font-size:10px;color:#22c55e;font-family:monospace;margin-left:6px">&#10003; '+jd(job.notifNo).completedDate+(jd(job.notifNo).team?' ('+jd(job.notifNo).team+')':'')+'</span>':'')+
+        '<span style="font-size:10px;color:var(--mut)">'+(job.area||'').split('-').pop().trim()+'</span>';
+      row.addEventListener('click',function(e){
+        var fly=e.target.getAttribute('data-fly');
+        var pdf=e.target.getAttribute('data-pdf');
+        var det=e.target.getAttribute('data-det');
+        var gm =e.target.getAttribute('data-gm');
+        if(fly&&LM){var p=fly.split('|');LM.flyTo([parseFloat(p[0]),parseFloat(p[1])],19,{duration:0.8});return;}
+        if(pdf&&!e.target.classList.contains('np')){openPdf(pdf);return;}
+        if(det){openModal(det);return;}
+        if(gm){var p=gm.split('|');window.open('https://www.google.com/maps/search/?api=1&query='+p[0]+','+p[1],'_blank');return;}
+      });
+      sec.appendChild(row);
+    });
+    el.appendChild(sec);
+  }
+}
+function reRender(){
+  if(!clusters.length&&!lone.length)return;
+  var _a=[].concat.apply([],clusters).concat(lone);
+  if(_activeMonth){
+    var _mj=_a.filter(function(j){return getJobMonthKey(j.date)===_activeMonth;});
+    var _fc=clusters.map(function(c){return c.filter(function(j){return getJobMonthKey(j.date)===_activeMonth;});}).filter(function(c){return c.length;});
+    var _ln=lone.filter(function(j){return getJobMonthKey(j.date)===_activeMonth;});
+    updStats(_mj);initMap();drawMap(_fc,_ln);renderList(_fc,_ln);
+  }else{
+    updStats(_a);initMap();drawMap(clusters,lone);renderList(clusters,lone);
+  }
+}
+
+// -- FILTER --------------------------------------------------------------------
+var _activeStatus = '';
+var _todayFilter=false;
+function setTodayFilter(btn){
+  _todayFilter=!_todayFilter;
+  btn.style.background=_todayFilter?'rgba(0,201,167,.3)':'rgba(0,201,167,.1)';
+  btn.style.borderColor=_todayFilter?'var(--acc)':'rgba(0,201,167,.3)';
+  btn.textContent=_todayFilter?'Today ON':'Today';
+  doFilter();
+}
+function setStatusFilter(val){
+  _activeStatus = val;
+  // Update button styles
+  var pendS = val==='Pending'   ? 'rgba(234,179,8,.4)'  : 'rgba(234,179,8,.15)';
+  var compS = val==='Completed' ? 'rgba(34,197,94,.5)'  : 'rgba(34,197,94,.12)';
+  var allS  = val===''          ? 'rgba(0,201,167,.3)'  : 'rgba(0,201,167,.1)';
+  var bp=document.getElementById('btnPend'),bc=document.getElementById('btnComp'),ba=document.getElementById('btnAll');
+  if(bp){bp.style.borderColor=pendS; bp.style.fontWeight=val==='Pending'?'900':'700';}
+  if(bc){bc.style.borderColor=compS; bc.style.fontWeight=val==='Completed'?'900':'700';}
+  if(ba){ba.style.borderColor=allS;  ba.style.fontWeight=val===''?'900':'600';}
+  document.getElementById('stF').value = val;
+  doFilter();
+}
+function doFilter(){
+  var s=document.getElementById('srch').value.toLowerCase().trim();
+  var st=_activeStatus||document.getElementById('stF').value;
+  if(!s&&!st&&!_todayFilter&&!_activeMonth){reRender();return;}
+  var _td=getTodayStr();
+  function mt(j){
+    return(!_activeMonth||getJobMonthKey(j.date)===_activeMonth)&&(!_todayFilter||jd(j.notifNo).completedDate===_td)&&(!st||sColor(gSt(j.notifNo))===sColor(st))&&
+      (!s||j.notifNo.toLowerCase().indexOf(s)!==-1||(j.street||'').toLowerCase().indexOf(s)!==-1||(j.area||'').toLowerCase().indexOf(s)!==-1||(j.type||'').toLowerCase().indexOf(s)!==-1);
+  }
+  var fc=clusters.map(function(c){return c.filter(mt);}).filter(function(c){return c.length;});
+  var fl=lone.filter(mt);
+  updStats([].concat.apply([],fc).concat(fl));
+  renderList(fc,fl);initMap();drawMap(fc,fl);
+}
+
+// -- MODAL ---------------------------------------------------------------------
+function findJob(n){return[].concat.apply([],clusters).concat(lone).filter(function(j){return j.notifNo===norm(n);})[0];}
+function openModal(n){
+  var job=findJob(n);if(!job)return;curN=norm(n);
+  document.getElementById('mTitle').textContent='Ref: '+job.notifNo;
+  document.getElementById('mNotif').textContent=job.notifNo;
+  var raw=gSt(n),sc=sColor(raw),sEl=document.getElementById('mStat'),found=false;
+  if(sEl){for(var i=0;i<sEl.options.length;i++){if(sColor(sEl.options[i].value)===sc){sEl.selectedIndex=i;found=true;break;}}if(!found)sEl.value='Pending';}
+  document.getElementById('mEst').value=gEst(n);document.getElementById('mAct').value=gAct(n);updBal();
+  var hp=!!pdfFor(n),pd=pdfFor(n);
+  document.getElementById('mPdfInfo').innerHTML=hp?'<span style="color:#22c55e">\u2705 '+pd.name+(pd.local?' \u2014 local':' \u2014 Google Drive')+'</span>':'<span style="color:var(--mut)">No PDF</span>';
+  var pb=document.getElementById('mPdfBtn');if(pb){pb.disabled=!hp;pb.textContent=hp?'\uD83D\uDCC4 Open PDF':'\uD83D\uDCC4 No PDF';}
+  // Lock state
+
+  document.getElementById('mOv').classList.remove('hidden');document.body.style.overflow='hidden';
+}
+function closeM(){document.getElementById('mOv').classList.add('hidden');document.body.style.overflow='';curN=null;}
+function ovClick(e){if(e.target.id==='mOv')closeM();}
+document.addEventListener('keydown',function(e){if(e.key==='Escape')closeM();});
+function updBal(){
+  var e=parseFloat(document.getElementById('mEst').value)||0,a=parseFloat(document.getElementById('mAct').value)||0,el=document.getElementById('mBal');
+  if(!document.getElementById('mEst').value){el.textContent='\u2014';el.className='bal';return;}
+  var b=e-a;el.textContent=b.toFixed(1)+' sqm';el.className='bal '+(b>0?'pos':b===0?'zero':'neg');
+}
+function getTodayStr(){var d=new Date(),mo=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];return d.getDate()+' '+mo[d.getMonth()]+' '+d.getFullYear();}
+function saveM(){
+  if(!curN)return;
+  if(!jobData[curN])jobData[curN]={};
+  jobData[curN].status=document.getElementById('mStat').value;
+  jobData[curN].estArea=document.getElementById('mEst').value;
+  jobData[curN].actualArea=document.getElementById('mAct').value;
+  // Write back to Google Sheet if completed
+  writeBackToSheet(curN, jobData[curN].status, jobData[curN].team||'', jobData[curN].completedDate||'', jobData[curN].actualArea||'');
+  closeM();reRender();updStats([].concat.apply([],clusters).concat(lone));
+}
+function markCompleteWithTeam(team){
+  if(!curN)return;
+  if(!jobData[curN])jobData[curN]={};
+  jobData[curN].status='Completed';
+  jobData[curN].team=team;
+  jobData[curN].completedDate=getTodayStr();
+  closeM();reRender();updStats([].concat.apply([],clusters).concat(lone));
+}
+function openLinkedPdf(){if(curN)openPdf(curN);}
+function openJobGmap(){var job=findJob(curN);if(job)window.open('https://www.google.com/maps/search/?api=1&query='+job.lat+','+job.lon,'_blank');}
+
+// -- EXPORT XLSX ---------------------------------------------------------------
+document.getElementById('btnXL').onclick=function(){
+  var res=doClusters(allRows,parseInt(document.getElementById('distIn').value)||300,parseInt(document.getElementById('minJ').value)||2);
+  var data=[];
+  res.clusters.forEach(function(c,ci){c.forEach(function(job){var e=gEst(job.notifNo),a=gAct(job.notifNo),b=(e&&a)?(parseFloat(e)-parseFloat(a)).toFixed(1):'';data.push({'Cluster':'Cluster '+(ci+1),'Notification Number':job.notifNo,'Date':job.date,'Type':job.type,'Street':job.street,'Area':job.area,'GIS':job.gisRaw,'Dim':job.dim,'STATUS':gSt(job.notifNo),'Est. Area':e,'Actual Done':a,'Balance':b,'PDF':pdfFor(job.notifNo)?'Yes':'No'});});data.push({});});
+  if(res.lone.length){data.push({'Cluster':'STANDALONE'});res.lone.forEach(function(job){var e=gEst(job.notifNo),a=gAct(job.notifNo),b=(e&&a)?(parseFloat(e)-parseFloat(a)).toFixed(1):'';data.push({'Cluster':'Standalone','Notification Number':job.notifNo,'Date':job.date,'Type':job.type,'Street':job.street,'Area':job.area,'GIS':job.gisRaw,'Dim':job.dim,'STATUS':gSt(job.notifNo),'Est. Area':e,'Actual Done':a,'Balance':b,'PDF':pdfFor(job.notifNo)?'Yes':'No'});});}
+  var wb=XLSX.utils.book_new(),ws=XLSX.utils.json_to_sheet(data);XLSX.utils.book_append_sheet(wb,ws,'Clusters');XLSX.writeFile(wb,'DEWA_Clusters.xlsx');
+};
+
+// -- GOOGLE MAPS ROUTE ---------------------------------------------------------
+document.getElementById('btnGM').onclick=function(){
+  var all=[].concat.apply([],clusters).concat(lone);if(!all.length){alert('Run clustering first.');return;}
+  var pts=clusters.length?clusters.map(ctr).concat(lone.map(function(j){return{lat:j.lat,lon:j.lon};})):all.map(function(j){return{lat:j.lat,lon:j.lon};});
+  if(pts.length===1){window.open('https://www.google.com/maps/search/?api=1&query='+pts[0].lat+','+pts[0].lon,'_blank');return;}
+  var used=pts.slice(0,10),o=used[0],d=used[used.length-1],wps=used.slice(1,-1);
+  var url='https://www.google.com/maps/dir/?api=1&origin='+encodeURIComponent(o.lat+','+o.lon)+'&destination='+encodeURIComponent(d.lat+','+d.lon);
+  if(wps.length)url+='&waypoints='+wps.map(function(p){return encodeURIComponent(p.lat+','+p.lon);}).join('%7C');
+  window.open(url+'&travelmode=driving','_blank');
+};
+
+// -- SAVE & SHARE - generates a FRESH team HTML (not outerHTML) ----------------
+// This is the definitive fix for the team map issue.
+// outerHTML always captures the current DOM state including hidden classes.
+// We generate the team file as a completely new, minimal self-contained HTML.
+document.getElementById('btnSh').onclick=function(){
+  if(!allRows.length){alert('Load data first, then click Save & Share.');return;}
+
+  // Warn if admin has local PDFs but no Drive links baked in
+  var localCount=Object.keys(pdfMap).length;
+  var driveCount=Object.keys(pdfFileIds).length;
+  if(localCount>0 && driveCount===0){
+    var go=confirm(
+      'You have '+localCount+' PDF(s) uploaded locally.\n\n'+
+      'Local PDFs CANNOT be sent to the team file (they are browser-only files).\n\n'+
+      'To make PDFs work for your team:\n'+
+      '1. Go to PDF section \u2192 Drive Links tab\n'+
+      '2. Paste each PDF\'s Google Drive share link\n'+
+      '3. Then click Save & Share again\n\n'+
+      'Click OK to continue without PDFs, or Cancel to add Drive links first.'
+    );
+    if(!go) return;
+  }
+  var teamHtml=makeTeamHTML();
+  var blob=new Blob([teamHtml],{type:'text/html;charset=utf-8'});
+  var a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='DEWA_TEAM.html';
+  document.body.appendChild(a);a.click();
+  setTimeout(function(){document.body.removeChild(a);URL.revokeObjectURL(a.href);},1000);
+  setTimeout(function(){alert('\u2705 DEWA_TEAM.html saved!\n\n'+allRows.length+' jobs embedded.\nSend to team \u2014 map opens automatically.');},400);
+};
+
+function makeTeamHTML(){
+  var rJ=JSON.stringify(allRows);
+  var jJ=JSON.stringify(jobData).replace(/<\/script>/gi,'<\\/script>');
+  var pJ=JSON.stringify(pdfFileIds);
+  var wbJ=JSON.stringify('https://script.google.com/macros/s/AKfycbzRqwDnZlfAR8cDwSacukFgWDOgh7QRM0t_CfM2FJEEHzTKbTjp_h-12FbaS99S86TM/exec');
+
+  // Inline CSS for team file
+  var CSS=[
+    ':root{--bg:#0a0e1a;--sur:#111827;--sur2:#1a2235;--brd:#1e2d45;--acc:#00c9a7;--blu:#3b82f6;--warn:#f59e0b;--red:#ef4444;--txt:#e2e8f0;--mut:#64748b}',
+    '*{box-sizing:border-box;margin:0;padding:0}',
+    'body{background:var(--bg);color:var(--txt);font-family:\'Segoe UI\',sans-serif;min-height:100vh}',
+    '.wrap{max-width:1400px;margin:0 auto;padding:14px}',
+    'header{display:flex;align-items:center;gap:12px;margin-bottom:14px;padding-bottom:12px;border-bottom:1px solid var(--brd);flex-wrap:wrap}',
+    '.logo{width:40px;height:40px;border-radius:9px;background:linear-gradient(135deg,var(--acc),var(--blu));display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}',
+    'header h1{font-size:17px;font-weight:700}',
+    'header p{font-size:11px;color:var(--mut);margin-top:2px}',
+    '.badge{margin-left:auto;background:rgba(59,130,246,.15);border:1px solid rgba(59,130,246,.4);color:var(--blu);font-size:11px;padding:4px 10px;border-radius:20px;font-family:monospace}',
+    '.ctrl{display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap;background:var(--sur);border:1px solid var(--brd);border-radius:10px;padding:12px 14px;margin-bottom:10px}',
+    '.cg{display:flex;flex-direction:column;gap:4px}',
+    '.cg label{font-size:10px;color:var(--mut);font-family:monospace;text-transform:uppercase;letter-spacing:.5px}',
+    'input[type=number],select,input[type=text]{background:var(--bg);border:1px solid var(--brd);color:var(--txt);font-size:13px;padding:8px 11px;border-radius:7px;outline:none;-webkit-appearance:none;appearance:none;font-family:monospace}',
+    '.rbtn{background:linear-gradient(135deg,var(--acc),#00a886);color:#000;font-weight:700;font-size:13px;border:none;padding:9px 22px;border-radius:8px;cursor:pointer;align-self:flex-end}',
+    '.sfb{display:flex;gap:10px;flex-wrap:wrap;align-items:center;background:var(--sur);border:1px solid var(--brd);border-radius:9px;padding:9px 12px;margin-bottom:10px}',
+    '.sfb input,.sfb select{flex:1;min-width:120px;width:auto}',
+    '.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(105px,1fr));gap:9px;margin-bottom:10px}',
+    '.stat{background:var(--sur);border:1px solid var(--brd);border-radius:9px;padding:11px 12px;border-left:3px solid var(--acc)}',
+    '.stat .v{font-size:20px;font-weight:700;font-family:monospace}',
+    '.stat .l{font-size:10px;color:var(--mut);margin-top:2px;text-transform:uppercase}',
+    '.leg{display:flex;flex-wrap:wrap;gap:10px;background:var(--sur);border:1px solid var(--brd);border-radius:9px;padding:9px 12px;margin-bottom:10px;align-items:center}',
+    '.li{display:flex;align-items:center;gap:5px;font-size:12px}',
+    '.ld{width:13px;height:13px;border-radius:50%;border:2px solid rgba(255,255,255,.3)}',
+    '.mgrid{display:grid;grid-template-columns:1fr 370px;gap:12px}',
+    '@media(max-width:900px){.mgrid{grid-template-columns:1fr}}',
+    '#mapwrap{border:1px solid var(--brd);border-radius:13px;overflow:hidden;height:520px}',
+    '#map{width:100%;height:100%}',
+    '.expbar{display:flex;gap:9px;margin-top:9px;flex-wrap:wrap}',
+    '.ebtn{background:var(--sur2);border:1px solid var(--brd);color:var(--txt);font-size:12px;font-weight:600;padding:8px 14px;border-radius:7px;cursor:pointer}',
+    '.ebtn:hover{border-color:var(--acc);color:var(--acc)}',
+    '.cpanel{background:var(--sur);border:1px solid var(--brd);border-radius:13px;display:flex;flex-direction:column;overflow:hidden;height:520px}',
+    '@media(max-width:900px){.cpanel{height:460px}}',
+    '.ph{padding:10px 13px;border-bottom:1px solid var(--brd);font-weight:600;font-size:13px;display:flex;align-items:center;gap:7px;flex-shrink:0}',
+    '.cl{overflow-y:auto;flex:1;padding:7px}',
+    '.cl::-webkit-scrollbar{width:3px}',
+    '.cl::-webkit-scrollbar-thumb{background:var(--brd);border-radius:3px}',
+    '.ccard{border:1px solid var(--brd);border-radius:9px;margin-bottom:7px;overflow:hidden;cursor:pointer;transition:border-color .2s}',
+    '.ccard:hover{border-color:var(--blu)}.ccard.active{border-color:var(--acc)}',
+    '.ch{display:flex;align-items:center;gap:7px;padding:9px 11px;background:var(--sur2)}',
+    '.cd{width:10px;height:10px;border-radius:50%}',
+    '.ctit{font-weight:600;font-size:12px;flex:1}',
+    '.ccnt{background:rgba(59,130,246,.15);color:var(--blu);font-size:10px;padding:2px 6px;border-radius:15px;font-family:monospace}',
+    '.cj{padding:4px 11px 7px}',
+    '.jr{display:flex;align-items:center;padding:5px 0;border-bottom:1px solid var(--brd);font-size:12px;gap:4px}',
+    '.jr:last-child{border-bottom:none}',
+    '.jn{font-family:monospace;font-size:11px;flex-shrink:0;cursor:pointer;text-decoration:underline dotted}',
+    '.jn:hover{color:var(--acc)}',
+    '.js{font-size:12px;color:var(--mut);flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}',
+    '.jd{font-size:10px;color:var(--warn);flex-shrink:0;font-family:monospace}',
+    '.jdot{width:8px;height:8px;border-radius:50%;flex-shrink:0}',
+    '.pb{background:none;border:none;cursor:pointer;font-size:14px;padding:2px 3px;flex-shrink:0;line-height:1}',
+    '.pb:hover{opacity:.7}.pb.np{opacity:.2;cursor:default}',
+    '.ls{margin-top:10px}',
+    '.lt{font-size:10px;color:var(--mut);font-family:monospace;margin-bottom:5px;text-transform:uppercase;letter-spacing:.5px}',
+    '.lr{padding:5px 3px;font-size:12px;border-bottom:1px solid var(--brd);display:flex;gap:4px;align-items:center}',
+    '.lr:hover{background:rgba(255,255,255,.02)}',
+    '.mov{position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:9000;display:flex;align-items:center;justify-content:center;padding:14px}',
+    '.mbox{background:var(--sur);border:1px solid var(--brd);border-radius:14px;width:100%;max-width:520px;max-height:90vh;overflow-y:auto;padding:20px}',
+    '.mbox h3{font-size:14px;font-weight:700;margin-bottom:13px;font-family:monospace;color:var(--acc)}',
+    '.cbtn{float:right;background:var(--sur2);border:1px solid var(--brd);color:var(--txt);font-size:16px;width:28px;height:28px;border-radius:50%;cursor:pointer}',
+    '.mf{display:flex;flex-direction:column;gap:3px;margin-bottom:10px}',
+    '.mf label{font-size:10px;color:var(--mut);font-family:monospace;text-transform:uppercase;letter-spacing:.5px}',
+    '.mf .vd{font-size:13px;color:var(--txt)}',
+    '.mf select,.mf input{background:var(--bg);border:1px solid var(--brd);color:var(--txt);font-family:monospace;font-size:12px;padding:7px 10px;border-radius:7px;outline:none;width:100%;-webkit-appearance:none;appearance:none}',
+    '.arow{display:grid;grid-template-columns:1fr 1fr 1fr;gap:9px}.arow .mf{margin-bottom:0}',
+    '@media(max-width:500px){.arow{grid-template-columns:1fr}}',
+    '.bal{background:var(--bg);border:1px solid var(--brd);border-radius:7px;padding:8px 10px;font-family:monospace;font-size:13px}',
+    '.bal.pos{border-color:rgba(234,179,8,.4);color:#eab308}.bal.zero{border-color:rgba(34,197,94,.4);color:#22c55e}.bal.neg{border-color:rgba(239,68,68,.4);color:var(--red)}',
+    '.ma{display:flex;gap:9px;margin-top:14px;flex-wrap:wrap}',
+    '.ms{background:linear-gradient(135deg,var(--acc),#00a886);color:#000;font-weight:700;font-size:12px;border:none;padding:9px 20px;border-radius:7px;cursor:pointer;flex:1}',
+    '.mp{background:rgba(59,130,246,.15);border:1px solid rgba(59,130,246,.3);color:var(--blu);font-size:12px;font-weight:600;padding:9px 16px;border-radius:7px;cursor:pointer;flex:1}',
+    '.mp:disabled{opacity:.35;cursor:not-allowed}',
+    'hr.dv{border:none;border-top:1px solid var(--brd);margin:11px 0}',
+    '.hidden{display:none!important}',
+    '.pill{display:inline-block;padding:2px 7px;border-radius:18px;font-size:10px;font-family:monospace;background:rgba(0,201,167,.1);color:var(--acc)}',
+    '.leaflet-popup-content-wrapper{background:var(--sur);color:var(--txt);border:1px solid var(--brd);border-radius:11px;box-shadow:0 8px 30px rgba(0,0,0,.5)}',
+    '.leaflet-popup-tip{background:var(--sur)}',
+    '.leaflet-popup-content{font-size:13px;line-height:1.6;margin:11px 13px}',
+    '.popen{display:inline-flex;align-items:center;gap:4px;background:rgba(0,201,167,.1);border:1px solid rgba(0,201,167,.3);color:var(--acc);padding:5px 10px;border-radius:7px;font-size:11px;cursor:pointer;font-family:monospace;font-weight:600}',
+    '.ppdf{display:inline-flex;align-items:center;gap:4px;background:rgba(59,130,246,.15);border:1px solid rgba(59,130,246,.3);color:var(--blu);padding:5px 10px;border-radius:7px;font-size:11px;cursor:pointer;font-family:monospace;font-weight:600}'
+  ].join('\n');
+
+  var BODY = [
+    '<div class="wrap">',
+    '<header><div class="logo">&#128205;</div><div><h1>Tanveer Ahmed Road Contracting LLC</h1><p>Reinstatement of Tiles &amp; Asphalt &mdash; HCM (W) Dept &mdash; GIS Cluster Finder</p></div><div class="badge">TEAM VIEW</div></header>',
+    '<div class="ctrl"><div class="cg"><label>Max Dist (m)</label><input type="number" id="distIn" value="300" min="50" max="5000" step="50"></div><div class="cg"><label>Min Jobs</label><input type="number" id="minJ" value="2" min="2" max="20"></div><div class="cg"><label>Area Filter</label><select id="areaF"><option value="">All Areas</option></select></div><button class="rbtn" id="runBtn">&#9654; Cluster</button></div>',
+    '<div class="sfb" id="sfb" style="align-items:center;gap:8px"><span>&#128269;</span><input type="text" id="srch" placeholder="Search..." oninput="doFilter()" style="flex:1"><select id="stF" style="display:none"></select><button id="btnPend" data-s="Pending" onclick="setStatusFilter(this.dataset.s)" style="background:rgba(234,179,8,.15);border:1px solid rgba(234,179,8,.4);color:#eab308;font-size:12px;font-weight:700;padding:7px 16px;border-radius:8px;cursor:pointer">&#x23F3; Pending</button><button id="btnComp" data-s="Completed" onclick="setStatusFilter(this.dataset.s)" style="background:rgba(34,197,94,.12);border:1px solid rgba(34,197,94,.35);color:#22c55e;font-size:12px;font-weight:700;padding:7px 16px;border-radius:8px;cursor:pointer">&#x2705; Completed</button><button id="btnAll" data-s="" onclick="setStatusFilter(this.dataset.s)" style="background:rgba(0,201,167,.1);border:1px solid rgba(0,201,167,.3);color:var(--acc);font-size:12px;font-weight:600;padding:7px 14px;border-radius:8px;cursor:pointer">All</button><button id=\"btnToday\" onclick=\"setTodayFilter(this)\" style=\"background:rgba(0,201,167,.1);border:1px solid rgba(0,201,167,.3);color:var(--acc);font-size:12px;font-weight:600;padding:7px 14px;border-radius:8px;cursor:pointer\">Today</button><button onclick=\"showDailySummary()\" style=\"background:rgba(37,211,102,.1);border:1px solid rgba(37,211,102,.3);color:#25d366;font-size:12px;font-weight:600;padding:7px 14px;border-radius:8px;cursor:pointer\">Summary</button><select id=\"monthF\" onchange=\"setMonthFilter(this.value)\" style=\"font-size:12px;padding:7px 8px;border-radius:8px;border:1px solid rgba(255,255,255,.1);background:#1a2235;color:#e2e8f0;cursor:pointer\"><option value=>All Months</option></select><button onclick=\"showTodaySummary()\" style=\"background:rgba(251,146,60,.1);border:1px solid rgba(251,146,60,.3);color:#fb923c;font-size:12px;font-weight:600;padding:7px 14px;border-radius:8px;cursor:pointer\">Today Summary</button></div>',
+    '<div class="stats"><div class="stat" style="border-left-color:#00c9a7"><div class="v" id="sTotal" style="color:#00c9a7">0</div><div class="l">Total Jobs</div></div><div class="stat" style="border-left-color:#22c55e"><div class="v" id="sComp" style="color:#22c55e">0</div><div class="l">&#x2705; Completed</div></div><div class="stat" style="border-left-color:#eab308"><div class="v" id="sPend" style="color:#eab308">0</div><div class="l">&#x23F3; Pending</div></div><div class="stat" style="border-left-color:#3b82f6"><div class="v" id="sEst" style="color:#3b82f6">0</div><div class="l">Est. Area m&#178;</div></div><div class="stat" style="border-left-color:#22c55e"><div class="v" id="sDone" style="color:#22c55e">0</div><div class="l">Done m&#178;</div></div><div class="stat" style="border-left-color:#eab308"><div class="v" id="sPArea" style="color:#eab308">0</div><div class="l">Pending m&#178;</div></div><div class="stat" style="border-left-color:#00c9a7"><div class="v" id="sPct" style="color:#00c9a7">0%</div><div class="l">Completion</div></div></div>',
+    '<div id="teamBar" class="stats" style="margin-top:6px"><div class="stat" style="border-left-color:#3b82f6"><div class="v" id="tMubarak" style="color:#3b82f6;font-size:24px">0</div><div class="l" style="color:#e2e8f0;font-weight:700">Mubarak</div></div><div class="stat" style="border-left-color:#f59e0b"><div class="v" id="tYousaf" style="color:#f59e0b;font-size:24px">0</div><div class="l" style="color:#e2e8f0;font-weight:700">Yousaf</div></div><div class="stat" style="border-left-color:#a855f7"><div class="v" id="tAzeem" style="color:#a855f7;font-size:24px">0</div><div class="l" style="color:#e2e8f0;font-weight:700">Azeem</div></div><div class="stat" style="border-left-color:#ec4899"><div class="v" id="tMudasir" style="color:#ec4899;font-size:24px">0</div><div class="l" style="color:#e2e8f0;font-weight:700">Mudasir</div></div><div class="stat" style="border-left-color:#f97316"><div class="v" id="tShahbaz" style="color:#f97316;font-size:24px">0</div><div class="l" style="color:#e2e8f0;font-weight:700">Shahbaz</div></div></div>',
+    '<div class="leg"><span style="font-size:11px;color:var(--mut);font-family:monospace;font-weight:600">MAP:</span><div class="li"><div class="ld" style="background:#22c55e"></div>Completed</div><div class="li"><div class="ld" style="background:#eab308"></div>Pending</div><div class="li"><div class="ld" style="background:#3b82f6"></div>In Progress</div><div class="li"><div class="ld" style="background:#f59e0b"></div>Partial</div><span style="margin-left:auto;font-size:11px;color:var(--mut)">Click ref# \u2192 fly to pin &nbsp;&#128196; = PDF &nbsp;&#128221; = Details</span></div>',
+    '<div class="mgrid"><div><div id="mapwrap"><div id="map"></div></div><div class="expbar"><button class="ebtn" id="btnGM">&#128506; Google Maps Route</button></div></div><div class="cpanel"><div class="ph">&#128279; Clusters &amp; Jobs <span class="pill" id="clBadge">0</span></div><div class="cl" id="clList"></div></div></div>',
+    '</div>',
+    '<div class="mov hidden" id="mOv" onclick="if(event.target.id===\'mOv\')closeM()">',
+    '<div class="mbox"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px"><h3 id="mTitle">Details</h3><button class="cbtn" onclick="closeM()">&#x2715;</button></div>',
+    '<div class="mf"><label>Notification Number</label><div class="vd" id="mNotif" style="font-family:monospace;color:var(--acc);font-size:15px;font-weight:700"></div></div>',
+    '<div class="mf"><label>Street</label><div class="vd" id="mStreet"></div></div>',
+    '<div class="mf"><label>Area / Zone</label><div class="vd" id="mArea"></div></div>',
+    '<div class="mf"><label>GIS Coordinates</label><div class="vd" id="mCoords" style="font-family:monospace;font-size:11px;color:var(--mut)"></div></div>',
+    '<div class="mf"><label>Dimension</label><div class="vd" id="mDim"></div></div>',
+    '<div class="mf"><label>Date</label><div class="vd" id="mDate"></div></div>',
+    '<div class="mf"><label>Type</label><div class="vd" id="mType"></div></div>',
+    '<hr class="dv">',
+    '<div class="mf"><label>Status</label><select id="mStat" onchange="updBal()"><option>Pending</option><option>In Progress</option><option>Completed</option><option>Partially Completed</option></select></div>',
+    '<div class="arow"><div class="mf"><label>Est. Area (sqm)</label><input type="number" id="mEst" placeholder="0" min="0" oninput="updBal()" inputmode="decimal"></div><div class="mf"><label>Actual Done (sqm)</label><input type="number" id="mAct" placeholder="0" min="0" oninput="updBal()" inputmode="decimal"></div><div class="mf"><label>Balance</label><div class="bal" id="mBal">&mdash;</div></div></div>',
+    '<div class="mf" style="margin-top:11px"><label>PDF</label><div id="mPdfInfo" style="font-size:12px;color:var(--mut);font-family:monospace"></div></div>',
+    '<hr style="border:none;border-top:1px solid rgba(255,255,255,.08);margin:12px 0"><div style="font-size:11px;color:var(--mut);font-family:monospace;margin-bottom:8px">TAP YOUR NAME TO MARK COMPLETE:</div><div id="teamBtns" style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px"><button id="tbMubarak" data-team="Mubarak" onclick="selectTeamBtn(this)" style="background:rgba(59,130,246,.1);border:2px solid rgba(59,130,246,.4);color:#fff;font-size:15px;font-weight:800;padding:13px 8px;border-radius:10px;cursor:pointer;transition:all .15s;width:100%">Mubarak</button><button id="tbYousaf" data-team="Yousaf" onclick="selectTeamBtn(this)" style="background:rgba(245,158,11,.1);border:2px solid rgba(245,158,11,.4);color:#fff;font-size:15px;font-weight:800;padding:13px 8px;border-radius:10px;cursor:pointer;transition:all .15s;width:100%">Yousaf</button><button id="tbAzeem" data-team="Azeem" onclick="selectTeamBtn(this)" style="background:rgba(168,85,247,.1);border:2px solid rgba(168,85,247,.4);color:#fff;font-size:15px;font-weight:800;padding:13px 8px;border-radius:10px;cursor:pointer;transition:all .15s;width:100%">Azeem</button><button id="tbMudasir" data-team="Mudasir" onclick="selectTeamBtn(this)" style="background:rgba(236,72,153,.1);border:2px solid rgba(236,72,153,.4);color:#fff;font-size:15px;font-weight:800;padding:13px 8px;border-radius:10px;cursor:pointer;transition:all .15s;width:100%">Mudasir</button><button id="tbShahbaz" data-team="Shahbaz" onclick="selectTeamBtn(this)" style="background:rgba(249,115,22,.1);border:2px solid rgba(249,115,22,.4);color:#fff;font-size:15px;font-weight:800;padding:13px 8px;border-radius:10px;cursor:pointer;transition:all .15s;width:100%">Shahbaz</button></div><div id="mPdfInfo" style="font-size:12px;font-family:monospace;margin-bottom:8px"><span style="color:var(--mut)">No PDF</span></div><div class="ma"><button class="ms" id="mSaveBtn" onclick="saveM()" style="width:100%;padding:12px;font-size:13px">Save &amp; Mark Complete</button><button class="mp" id="mPdfBtn" onclick="openLinkedPdf()" disabled>&#128196; Open PDF</button><button class="mp" onclick="openJobGmap()" style="background:rgba(34,197,94,.12);border-color:rgba(34,197,94,.3);color:#22c55e">&#128506; Maps</button></div>',
+    '</div></div>'
+  ].join('\n');
+
+  // Team JS - self-contained, no dependency on admin page
+  var TEAM_JS = [
+    "var SC={'complete':'#22c55e','completed':'#22c55e','pending':'#eab308','in progress':'#3b82f6','in-progress':'#3b82f6','inprogress':'#3b82f6','partially completed':'#f59e0b','partial':'#f59e0b','partially complete':'#f59e0b'};",
+    "var SC_LBL={'#22c55e':'Completed','#eab308':'Pending','#3b82f6':'In Progress','#f59e0b':'Partially Completed'};",
+    "var CC=['#00c9a7','#3b82f6','#f59e0b','#ef4444','#a855f7','#ec4899','#06b6d4','#84cc16','#f97316','#6366f1'];",
+    "var allRows="+rJ+",pdfFileIds="+pJ+",jobData="+jJ+",_wbUrl="+wbJ+";",
+    "var clusters=[],lone=[],LM=null,mapMarkers=[],curN=null;",
+    "function norm(s){return String(s||'').trim().replace(/\\s+/g,' ');}",
+    "function jd(n){return jobData[norm(n)]||{};}",
+    "function gSt(n){return jd(n).status||'Pending';}",
+    "function sColor(r){return SC[String(r||'').trim().toLowerCase()]||'#eab308';}",
+    "function sLabel(r){return SC_LBL[sColor(r)]||String(r);}",
+    "function sCol(n){return sColor(gSt(n));}",
+    "function pdfFor(n){var k=norm(n);if(pdfFileIds[k])return{url:'https://drive.google.com/file/d/'+pdfFileIds[k]+'/view',name:k+'.pdf'};return null;}",
+    "function openPdf(n){var p=pdfFor(norm(n));if(p){window.open(p.url,'_blank','noopener');return;}alert('No PDF for: '+norm(n));}",
+    "function hav(a,b,c,d){var R=6371000,dL=(c-a)*Math.PI/180,dO=(d-b)*Math.PI/180,x=Math.sin(dL/2)*Math.sin(dL/2)+Math.cos(a*Math.PI/180)*Math.cos(c*Math.PI/180)*Math.sin(dO/2)*Math.sin(dO/2);return R*2*Math.atan2(Math.sqrt(x),Math.sqrt(1-x));}",
+    "function ctr(c){return{lat:c.reduce(function(s,p){return s+p.lat;},0)/c.length,lon:c.reduce(function(s,p){return s+p.lon;},0)/c.length};}",
+    "function sprd(c){var m=0;for(var i=0;i<c.length;i++)for(var j=i+1;j<c.length;j++){var d=hav(c[i].lat,c[i].lon,c[j].lat,c[j].lon);if(d>m)m=d;}return m;}",
+    "function doClusters(rs,maxD,minJ){var pts=rs.map(function(r){return Object.assign({},r,{_c:-1});});var ci=0;for(var i=0;i<pts.length;i++){if(pts[i]._c!==-1)continue;var m=[pts[i]];for(var j=i+1;j<pts.length;j++){if(pts[j]._c!==-1)continue;if(hav(pts[i].lat,pts[i].lon,pts[j].lat,pts[j].lon)<=maxD)m.push(pts[j]);}if(m.length>=minJ){m.forEach(function(p){p._c=ci;});ci++;}}var cl=[];for(var c=0;c<ci;c++)cl.push(pts.filter(function(p){return p._c===c;}));return{clusters:cl,lone:pts.filter(function(p){return p._c===-1;})};}",
+    "function findJob(n){return[].concat.apply([],clusters).concat(lone).filter(function(j){return j.notifNo===norm(n);})[0];}",
+    "function buildAF(){var af=document.getElementById('areaF');var areas=[];allRows.forEach(function(r){if(r.area&&areas.indexOf(r.area)===-1)areas.push(r.area);});areas.sort();af.innerHTML='<option value=\"\">All Areas</option>';areas.forEach(function(a){var o=document.createElement('option');o.value=a;o.textContent=a;af.appendChild(o);});}",
+    "function updStats(jobs){var e=0,a=0;jobs.forEach(function(j){e+=parseFloat(jd(j.notifNo).estArea)||0;a+=parseFloat(jd(j.notifNo).actualArea)||0;});var pa=Math.max(0,e-a),pct=e>0?((a/e)*100).toFixed(1):'0';function se(id,v){var el=document.getElementById(id);if(el)el.textContent=v;}se('sTotal',jobs.length);se('sComp',jobs.filter(function(j){return sColor(gSt(j.notifNo))==='#22c55e';}).length);se('sPend',jobs.filter(function(j){return sColor(gSt(j.notifNo))==='#eab308';}).length);se('sEst',e.toFixed(1));se('sDone',a.toFixed(1));se('sPArea',pa.toFixed(1));se('sPct',pct+'%');['Mubarak','Yousaf','Azeem','Mudasir','Shahbaz'].forEach(function(t){se('t'+t,jobs.filter(function(j){return(jd(j.notifNo).team||'').trim().toLowerCase()===t.toLowerCase();}).length);});}",
+    "function doCluster(){var maxD=parseInt(document.getElementById('distIn').value)||300,minJ=parseInt(document.getElementById('minJ').value)||2,af=document.getElementById('areaF').value;var rs=af?allRows.filter(function(r){return r.area===af;}):allRows;if(!rs.length)return;var res=doClusters(rs,maxD,minJ);clusters=res.clusters;lone=res.lone;var all=[].concat.apply([],clusters).concat(lone);var _sj=_activeMonth?all.filter(function(j){return getJobMonthKey(j.date)===_activeMonth;}):all;document.getElementById('sTotal').textContent=_sj.length;document.getElementById('clBadge').textContent=clusters.length;updStats(_sj);if(_activeMonth){var _fc=clusters.map(function(c){return c.filter(function(j){return getJobMonthKey(j.date)===_activeMonth;});}).filter(function(c){return c.length;});var _ln=lone.filter(function(j){return getJobMonthKey(j.date)===_activeMonth;});drawMap(_fc,_ln);renderList(_fc,_ln);}else{drawMap(clusters,lone);renderList(clusters,lone);}}",
+    "document.getElementById('runBtn').onclick=doCluster;",
+    "function initMap(){if(!LM){LM=L.map('map',{zoomControl:true});L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{attribution:'&copy; OpenStreetMap',maxZoom:19}).addTo(LM);}LM.invalidateSize();}",
+    "function drawMap(cl,ln){mapMarkers.forEach(function(m){try{LM.removeLayer(m);}catch(e){}});mapMarkers=[];var pts=[];cl.forEach(function(c,ci){var cc=CC[ci%CC.length],ct=ctr(c),sp=sprd(c);var ring=L.circle([ct.lat,ct.lon],{radius:Math.max(sp/2,80),color:cc,fillColor:cc,fillOpacity:.06,weight:1.5,dashArray:'5,5'}).addTo(LM);mapMarkers.push(ring);c.forEach(function(job){addDot(job,cc,ci+1,pts);});});ln.forEach(function(job){addDot(job,sCol(job.notifNo),null,pts);});if(pts.length)LM.fitBounds(pts,{padding:[50,50]});setTimeout(function(){LM.invalidateSize();},200);}",
+    "function addDot(job,rc,cn,pts){var sc=sCol(job.notifNo),hp=!!pdfFor(job.notifNo),sz=cn?22:14,lbl=cn?String(cn):'';var pB=hp?'<div style=\"position:absolute;top:-4px;right:-4px;background:#fff;border-radius:50%;width:11px;height:11px;font-size:7px;line-height:11px;text-align:center\">P</div>':'';var dH='<div style=\"background:'+sc+';border:2.5px solid rgba(255,255,255,.9);width:'+sz+'px;height:'+sz+'px;border-radius:50%;box-shadow:0 2px 8px rgba(0,0,0,.5),0 0 0 2px '+sc+'44;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;color:#000;position:relative\">'+lbl+pB+'</div>';var ico=L.divIcon({html:dH,className:'',iconSize:[sz,sz],iconAnchor:[sz/2,sz/2]});var mk=L.marker([job.lat,job.lon],{icon:ico});(function(j,ringC,cnum){mk.on('click',function(ev){L.DomEvent.stopPropagation(ev);L.popup({maxWidth:320,autoPan:true}).setLatLng([j.lat,j.lon]).setContent(buildPopup(j,ringC,cnum)).openOn(LM);});})(job,rc,cn);mk.addTo(LM);mapMarkers.push(mk);pts.push([job.lat,job.lon]);}",
+    "function buildPopup(job,rc,cn){var sv=gSt(job.notifNo),sc=sColor(sv),lbl=sLabel(sv),e=jd(job.notifNo).estArea||'',a=jd(job.notifNo).actualArea||'',bal=(e&&a)?((parseFloat(e)-parseFloat(a)).toFixed(1)+' sqm'):'\\u2014',hp=!!pdfFor(job.notifNo);var W=document.createElement('div');W.style.minWidth='210px';if(cn){var h=document.createElement('div');h.style.cssText='font-size:10px;color:'+rc+';font-family:monospace;font-weight:700;margin-bottom:5px';h.textContent='CLUSTER '+cn;W.appendChild(h);}var ref=document.createElement('div');ref.style.cssText='font-size:14px;font-weight:700;font-family:monospace;color:#00c9a7;margin-bottom:5px;cursor:pointer;text-decoration:underline dotted';ref.textContent=job.notifNo;(function(n){ref.onclick=function(){LM.closePopup();setTimeout(function(){openModal(n);},60);};})(job.notifNo);W.appendChild(ref);var sb=document.createElement('div');sb.style.cssText='margin-bottom:5px;display:flex;align-items:center;gap:5px';sb.innerHTML='<div style=\"width:9px;height:9px;border-radius:50%;background:'+sc+'\"></div><span style=\"font-family:monospace;font-size:11px;padding:2px 7px;border-radius:11px;background:'+sc+'22;color:'+sc+'\">'+lbl+'</span>';W.appendChild(sb);[['\\uD83D\\uDCCD',job.street],['\\uD83C\\uDFD8',job.area],['\\uD83D\\uDCCF',job.dim]].forEach(function(r){if(r[1]){var d=document.createElement('div');d.style.cssText='font-size:12px;color:#64748b;margin-bottom:2px';d.innerHTML=r[0]+' '+r[1];W.appendChild(d);}});if(e){var d=document.createElement('div');d.style.cssText='font-size:11px;font-family:monospace;color:#64748b;margin-top:4px;padding:3px 6px;background:#1a2235;border-radius:4px';d.textContent='Est:'+e+' Done:'+(a||'\\u2014')+' Bal:'+bal;W.appendChild(d);}var acts=document.createElement('div');acts.style.cssText='display:flex;gap:5px;margin-top:7px;flex-wrap:wrap';var det=document.createElement('span');det.className='popen';det.innerHTML='\\u270F Details';(function(n){det.onclick=function(){LM.closePopup();setTimeout(function(){openModal(n);},60);};})(job.notifNo);acts.appendChild(det);if(hp){var pb=document.createElement('span');pb.className='ppdf';pb.innerHTML='\\uD83D\\uDCC4 PDF';(function(n){pb.onclick=function(){openPdf(n);};})(job.notifNo);acts.appendChild(pb);}var gm=document.createElement('span');gm.style.cssText='display:inline-flex;align-items:center;gap:3px;background:rgba(34,197,94,.1);border:1px solid rgba(34,197,94,.3);color:#22c55e;padding:5px 9px;border-radius:7px;font-size:11px;cursor:pointer;font-family:monospace;font-weight:600';gm.innerHTML='\\uD83D\\uDDFA Maps';(function(la,lo){gm.onclick=function(){window.open('https://www.google.com/maps/search/?api=1&query='+la+','+lo,'_blank');};})(job.lat,job.lon);acts.appendChild(gm);W.appendChild(acts);return W;}",
+    "function renderList(cl,ln){var el=document.getElementById('clList');el.innerHTML='';cl.forEach(function(c,ci){var cc=CC[ci%CC.length],sp=Math.round(sprd(c));var card=document.createElement('div');card.className='ccard';var jh='';c.forEach(function(job){var sc=sCol(job.notifNo),hp=!!pdfFor(job.notifNo);jh+='<div class=\"jr\"><div class=\"jdot\" style=\"background:'+sc+'\"></div><span class=\"jn\" style=\"color:'+cc+'\" data-fly=\"'+job.lat+'|'+job.lon+'\" title=\"Click to fly to pin\">'+job.notifNo+'</span><span class=\"js\">'+(job.street||job.area||'\\u2014')+'</span><button class=\"pb'+(hp?'':' np')+'\" data-pdf=\"'+job.notifNo+'\" title=\"'+(hp?'Open PDF':'No PDF')+'\">\\uD83D\\uDCC4</button><button class=\"pb\" data-det=\"'+job.notifNo+'\" title=\"Details\">\\uD83D\\uDCDD</button><button class=\"pb\" data-gm=\"'+job.lat+'|'+job.lon+'\" title=\"Google Maps\">\\uD83D\\uDDFA</button><span class=\"jd\">'+job.dim+'</span></div>';});var zn=(c[0].area||'').split('-').pop().trim();card.innerHTML='<div class=\"ch\"><div class=\"cd\" style=\"background:'+cc+'\"></div><span class=\"ctit\">Cluster '+(ci+1)+' \\u2014 '+zn+'</span><span class=\"ccnt\">'+c.length+' jobs</span></div><div class=\"cj\"><div style=\"font-size:10px;color:var(--mut);margin-bottom:4px;font-family:monospace\">SPREAD: '+sp+'m</div>'+jh+'</div>';card.querySelector('.ch').onclick=function(){document.querySelectorAll('.ccard').forEach(function(x){x.classList.remove('active');});card.classList.add('active');if(LM)LM.flyTo([ctr(c).lat,ctr(c).lon],15,{duration:0.8});};card.addEventListener('click',function(e){var fly=e.target.getAttribute('data-fly'),pdf=e.target.getAttribute('data-pdf'),det=e.target.getAttribute('data-det'),gm=e.target.getAttribute('data-gm');if(fly&&LM){var p=fly.split('|');LM.flyTo([parseFloat(p[0]),parseFloat(p[1])],17,{duration:0.8});return;}if(pdf&&!e.target.classList.contains('np')){openPdf(pdf);return;}if(det){openModal(det);return;}if(gm){var p=gm.split('|');window.open('https://www.google.com/maps/search/?api=1&query='+p[0]+','+p[1],'_blank');return;}});el.appendChild(card);});if(ln.length){var sec=document.createElement('div');sec.className='ls';sec.innerHTML='<div class=\"lt\">\\u26AB '+ln.length+' standalone</div>';ln.forEach(function(job){var sc=sCol(job.notifNo),hp=!!pdfFor(job.notifNo);var row=document.createElement('div');row.className='lr';row.innerHTML='<div class=\"jdot\" style=\"background:'+sc+'\"></div><span class=\"jn\" style=\"font-family:monospace;color:var(--mut);font-size:11px;cursor:pointer;text-decoration:underline dotted\" data-fly=\"'+job.lat+'|'+job.lon+'\">'+job.notifNo+'</span><span class=\"js\">'+(job.street||'\\u2014')+'</span><button class=\"pb'+(hp?'':' np')+'\" data-pdf=\"'+job.notifNo+'\">\\uD83D\\uDCC4</button><button class=\"pb\" data-det=\"'+job.notifNo+'\">\\uD83D\\uDCDD</button><button class=\"pb\" data-gm=\"'+job.lat+'|'+job.lon+'\">\\uD83D\\uDDFA</button><span style=\"font-size:10px;color:var(--mut)\">'+(job.area||'').split('-').pop().trim()+'</span>';row.addEventListener('click',function(e){var fly=e.target.getAttribute('data-fly'),pdf=e.target.getAttribute('data-pdf'),det=e.target.getAttribute('data-det'),gm=e.target.getAttribute('data-gm');if(fly&&LM){var p=fly.split('|');LM.flyTo([parseFloat(p[0]),parseFloat(p[1])],17,{duration:0.8});return;}if(pdf&&!e.target.classList.contains('np')){openPdf(pdf);return;}if(det){openModal(det);return;}if(gm){var p=gm.split('|');window.open('https://www.google.com/maps/search/?api=1&query='+p[0]+','+p[1],'_blank');return;}});sec.appendChild(row);});el.appendChild(sec);}}",
+    "function doFilter(){var _td=getTodayStr();var s=document.getElementById('srch').value.toLowerCase().trim(),st=_activeStatus;if(!s&&!st&&!_todayFilter&&!_activeMonth){var _ta=[].concat.apply([],clusters).concat(lone);updStats(_ta);drawMap(clusters,lone);renderList(clusters,lone);return;}function mt(j){return(!_activeMonth||getJobMonthKey(j.date)===_activeMonth)&&(!_todayFilter||jd(j.notifNo).completedDate===_td)&&(!st||sColor(gSt(j.notifNo))===sColor(st))&&(!s||j.notifNo.toLowerCase().indexOf(s)!==-1||(j.street||'').toLowerCase().indexOf(s)!==-1||(j.area||'').toLowerCase().indexOf(s)!==-1);}var fc=clusters.map(function(c){return c.filter(mt);}).filter(function(c){return c.length;});var fl=lone.filter(mt);var aF=[].concat.apply([],fc).concat(fl);updStats(aF);drawMap(fc,fl);renderList(fc,fl);}",
+    "function openModal(n){var job=findJob(n);if(!job)return;curN=norm(n);_selTeam='';['tbMubarak','tbYousaf','tbAzeem','tbMudasir','tbShahbaz'].forEach(function(id){var b=document.getElementById(id);if(!b)return;b.style.transform='scale(1)';b.style.boxShadow='none';b.style.borderWidth='2px';b.textContent=b.getAttribute('data-team');});var _sb=document.getElementById('mSaveBtn');if(_sb){}document.getElementById('mTitle').textContent='Ref: '+job.notifNo;document.getElementById('mNotif').textContent=job.notifNo;var raw=gSt(n),sc=sColor(raw),sEl=document.getElementById('mStat'),found=false;for(var i=0;i<sEl.options.length;i++){if(sColor(sEl.options[i].value)===sc){sEl.selectedIndex=i;found=true;break;}}if(!found)sEl.value='Pending';document.getElementById('mEst').value=jd(n).estArea||'';document.getElementById('mAct').value=jd(n).actualArea||'';updBal();var hp=!!pdfFor(n),pd=pdfFor(n);document.getElementById('mPdfInfo').innerHTML=hp?'<span style=\"color:#22c55e\">\\u2705 '+pd.name+'</span>':'<span style=\"color:var(--mut)\">No PDF</span>';var pb=document.getElementById('mPdfBtn');if(pb){pb.disabled=!hp;pb.textContent=hp?'\\uD83D\\uDCC4 Open PDF':'\\uD83D\\uDCC4 No PDF';}document.getElementById('mOv').classList.remove('hidden');document.body.style.overflow='hidden';}",
+    "function closeM(){document.getElementById('mOv').classList.add('hidden');document.body.style.overflow='';curN=null;}",
+    "function updBal(){var e=parseFloat(document.getElementById('mEst').value)||0,a=parseFloat(document.getElementById('mAct').value)||0,el=document.getElementById('mBal');if(!document.getElementById('mEst').value){el.textContent='\\u2014';el.className='bal';return;}var b=e-a;el.textContent=b.toFixed(1)+' sqm';el.className='bal '+(b>0?'pos':b===0?'zero':'neg');}",
+    "function saveM(){if(!curN)return;if(!jobData[curN])jobData[curN]={};if(_selTeam){jobData[curN].status='Completed';jobData[curN].team=_selTeam;jobData[curN].completedDate=getTodayStr();jobData[curN].actualArea=document.getElementById('mAct').value;writeBack(curN,'Completed',_selTeam,jobData[curN].completedDate,jobData[curN].actualArea||'');_selTeam='';}else{jobData[curN].status=document.getElementById('mStat').value;jobData[curN].estArea=document.getElementById('mEst').value;jobData[curN].actualArea=document.getElementById('mAct').value;writeBack(curN,jobData[curN].status,jobData[curN].team||'',jobData[curN].completedDate||'',jobData[curN].actualArea||'');}persistJobData();closeM();drawMap(clusters,lone);renderList(clusters,lone);var _ta=[].concat.apply([],clusters).concat(lone);updStats(_activeMonth?_ta.filter(function(j){return getJobMonthKey(j.date)===_activeMonth;}):_ta);}",
+    "function persistJobData(){try{localStorage.setItem('dewa_jd',JSON.stringify(jobData));}catch(e){}}",
+    "function loadPersistedJobData(){try{var s=localStorage.getItem('dewa_jd');if(s){var saved=JSON.parse(s);Object.keys(saved).forEach(function(k){if(!jobData[k])jobData[k]={};Object.assign(jobData[k],saved[k]);});}}catch(e){}}",
+    "function openLinkedPdf(){if(curN)openPdf(curN);}",
+    "function openJobGmap(){var job=findJob(curN);if(job)window.open('https://www.google.com/maps/search/?api=1&query='+job.lat+','+job.lon,'_blank');}",
+    "document.addEventListener('keydown',function(e){if(e.key==='Escape')closeM();});",
+    "document.getElementById('btnGM').onclick=function(){var all=[].concat.apply([],clusters).concat(lone);if(!all.length)return;var pts=clusters.length?clusters.map(ctr).concat(lone.map(function(j){return{lat:j.lat,lon:j.lon};})):all.map(function(j){return{lat:j.lat,lon:j.lon};});if(pts.length===1){window.open('https://www.google.com/maps/search/?api=1&query='+pts[0].lat+','+pts[0].lon,'_blank');return;}var used=pts.slice(0,10),o=used[0],d=used[used.length-1],wps=used.slice(1,-1);var url='https://www.google.com/maps/dir/?api=1&origin='+encodeURIComponent(o.lat+','+o.lon)+'&destination='+encodeURIComponent(d.lat+','+d.lon);if(wps.length)url+='&waypoints='+wps.map(function(p){return encodeURIComponent(p.lat+','+p.lon);}).join('%7C');window.open(url+'&travelmode=driving','_blank');};",
+    "window.addEventListener('DOMContentLoaded',function(){",
+    "  initWriteback();",
+    "  loadPersistedJobData();",
+    "  buildAF();",
+    "  buildMonthFilter();",
+    "  // Map container is visible from page open - init immediately",
+    "  initMap();",
+    "  doCluster();",
+    "});",
+    "var _activeStatus='';",
+    "function setStatusFilter(val){_activeStatus=val;var bp=document.getElementById('btnPend'),bc=document.getElementById('btnComp'),ba=document.getElementById('btnAll');if(bp)bp.style.borderColor=val==='Pending'?'rgba(234,179,8,.7)':'rgba(234,179,8,.4)';if(bc)bc.style.borderColor=val==='Completed'?'rgba(34,197,94,.6)':'rgba(34,197,94,.35)';if(ba)ba.style.borderColor=val===''?'rgba(0,201,167,.6)':'rgba(0,201,167,.3)';doFilter();}",
+    "var _selTeam='';",
+    "function selectTeamBtn(btn){_selTeam=btn.getAttribute('data-team');['tbMubarak','tbYousaf','tbAzeem','tbMudasir','tbShahbaz'].forEach(function(id){var b=document.getElementById(id);if(!b)return;b.style.opacity='0.45';b.style.transform='scale(1)';b.style.boxShadow='none';b.style.borderWidth='2px';b.textContent=b.getAttribute('data-team');});btn.style.opacity='1';btn.style.transform='scale(0.95)';btn.style.boxShadow='inset 0 3px 8px rgba(0,0,0,.5),0 0 0 3px '+btn.style.color+'55';btn.style.borderWidth='3px';btn.textContent='\u2713 '+btn.getAttribute('data-team');}",
+    "function getTodayStr(){var d=new Date(),mo=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];return d.getDate()+' '+mo[d.getMonth()]+' '+d.getFullYear();}",
+    // _wbUrl already baked on line above - do not redeclare
+    "function initWriteback(){try{var stored=localStorage.getItem('dewa_wb_url');if(stored)_wbUrl=stored;}catch(e){}}",
+    "function writeBack(n,s,t,d,a){if(!_wbUrl)return;var url=_wbUrl+'?notifNo='+encodeURIComponent(n)+'&status='+encodeURIComponent(s)+'&team='+encodeURIComponent(t)+'&date='+encodeURIComponent(d)+'&actualArea='+encodeURIComponent(a||'')+'&_t='+Date.now();var img=new Image();img.onerror=img.onload=function(){console.log('wb:'+n);};img.src=url;setTimeout(function(){try{fetch(url,{method:'GET',mode:'no-cors'}).catch(function(){});}catch(e){}},500);}",
+    "var _todayFilter=false;",
+    "function setTodayFilter(btn){_todayFilter=!_todayFilter;btn.style.background=_todayFilter?'rgba(0,201,167,.3)':'rgba(0,201,167,.1)';btn.style.borderColor=_todayFilter?'var(--acc)':'rgba(0,201,167,.3)';btn.textContent=_todayFilter?'Today ON':'Today';doFilter();}",
+    "function showDailySummary(){var _td=getTodayStr();var all=[].concat.apply([],clusters).concat(lone);var done=all.filter(function(j){return jd(j.notifNo).completedDate===_td;});if(!done.length){alert('No jobs completed today ('+_td+').');return;}var tc={Mubarak:'#3b82f6',Yousaf:'#f59e0b',Azeem:'#a855f7',Mudasir:'#ec4899',Shahbaz:'#f97316'};var gr={Mubarak:[],Yousaf:[],Azeem:[],Mudasir:[],Shahbaz:[],Other:[]};done.forEach(function(j){var t=jd(j.notifNo).team||'Other';if(gr[t])gr[t].push(j);else gr.Other.push(j);});var wa=['DEWA Daily Summary - '+_td,'Total: '+done.length+' jobs',''];var hr='';['Mubarak','Yousaf','Azeem','Mudasir','Shahbaz','Other'].forEach(function(t){if(!gr[t]||!gr[t].length)return;var col=tc[t]||'#94a3b8';wa.push(t+' ('+gr[t].length+'):');gr[t].forEach(function(j){wa.push('  '+j.notifNo+' '+(j.street||j.area||''));});wa.push('');hr+='<p><b style=color:'+col+'>'+t+' ('+gr[t].length+')</b></p>'+gr[t].map(function(j){return '<p style=font-size:11px;color:#94a3b8>'+j.notifNo+' '+(j.street||j.area||'')+'</p>';}).join('');});var wt=wa.join('\\n');var ov=document.createElement('div');ov.id='sumModal';ov.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:9999;display:flex;align-items:center;justify-content:center;padding:16px';var inn=document.createElement('div');inn.style.cssText='background:#111827;border:1px solid #1e2d45;border-radius:14px;width:100%;max-width:480px;max-height:80vh;display:flex;flex-direction:column';var hd=document.createElement('div');hd.style.cssText='padding:12px;border-bottom:1px solid #1e2d45;display:flex;justify-content:space-between;align-items:center';hd.innerHTML='<b style=color:#e2e8f0>Summary '+_td+'</b>';var cb=document.createElement('button');cb.textContent='x';cb.style.cssText='background:none;border:none;color:#94a3b8;font-size:18px;cursor:pointer';cb.onclick=function(){ov.remove();};hd.appendChild(cb);var bd=document.createElement('div');bd.style.cssText='padding:14px;overflow-y:auto;flex:1';bd.innerHTML='<p style=color:#22c55e>Today: '+done.length+' jobs</p>'+hr;var ft=document.createElement('div');ft.style.cssText='padding:12px;border-top:1px solid #1e2d45';var wb=document.createElement('button');wb.textContent='Copy for WhatsApp';wb.style.cssText='width:100%;padding:10px;background:rgba(37,211,102,.15);border:1px solid rgba(37,211,102,.3);color:#25d366;border-radius:8px;cursor:pointer;font-weight:700';wb.onclick=function(){var ta=document.createElement('textarea');ta.value=wt;ta.style.position='fixed';ta.style.top='-9999px';document.body.appendChild(ta);ta.select();document.execCommand('copy');document.body.removeChild(ta);this.textContent='Copied!';var b=this;setTimeout(function(){b.textContent='Copy for WhatsApp';},2000);};ft.appendChild(wb);inn.appendChild(hd);inn.appendChild(bd);inn.appendChild(ft);ov.appendChild(inn);var ex=document.getElementById('sumModal');if(ex)ex.remove();document.body.appendChild(ov);ov.onclick=function(e){if(e.target===ov)ov.remove();};}",
+    "function normDate(s){if(!s)return'';s=String(s).trim();var mL=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];if(/^\\d{1,2} [A-Za-z]{3} \\d{4}$/.test(s))return s;var a=s.match(/^(\\d{1,2})[.\/](\\d{1,2})[.\/](\\d{4})$/);if(a)return parseInt(a[1],10)+' '+mL[parseInt(a[2],10)-1]+' '+a[3];var b=s.match(/^(\\d{4})-(\\d{2})-(\\d{2})$/);if(b)return parseInt(b[3],10)+' '+mL[parseInt(b[2],10)-1]+' '+b[1];return s;}",
+    "var _activeMonth='';",
+    "function getJobMonthKey(d){if(!d)return'';var p=d.split('.');return p.length<3?'':p[2]+'-'+p[1];}",
+    "function getMonthLabel(mm,yy){var n=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];return(n[parseInt(mm,10)-1]||mm)+' '+yy;}",
+    "function buildMonthFilter(){var mf=document.getElementById('monthF');if(!mf)return;var ms=[];allRows.forEach(function(r){if(!r.date)return;var p=r.date.split('.');if(p.length<3)return;var k=p[2]+'-'+p[1];if(ms.indexOf(k)===-1)ms.push(k);});ms.sort().reverse();mf.innerHTML='<option value=>All Months</option>';ms.forEach(function(k){var p=k.split('-');var o=document.createElement('option');o.value=k;o.textContent=getMonthLabel(p[1],p[0]);mf.appendChild(o);});}",
+    "function setMonthFilter(v){_activeMonth=v;doFilter();}",
+    "function showTodaySummary(){var _td=getTodayStr();var all=[].concat.apply([],clusters).concat(lone);var done=all.filter(function(j){return normDate(jd(j.notifNo).completedDate)===normDate(_td);});if(!done.length){alert('No jobs completed today ('+_td+').');return;}var tc={Mubarak:'#3b82f6',Yousaf:'#f59e0b',Azeem:'#a855f7',Mudasir:'#ec4899',Shahbaz:'#f97316'};var gr={Mubarak:0,Yousaf:0,Azeem:0,Mudasir:0,Shahbaz:0,Other:0};done.forEach(function(j){var t=(jd(j.notifNo).team||'').trim()||'Other';if(gr.hasOwnProperty(t))gr[t]++;else gr.Other++;});var wa=['DEWA Daily Summary','Date: '+_td,'Total Completed: '+done.length,''];var rows='';['Mubarak','Yousaf','Azeem','Mudasir','Shahbaz','Other'].forEach(function(t){if(!gr[t])return;var col=tc[t]||'#94a3b8';wa.push(t+': '+gr[t]+' jobs');rows+='<tr><td style=padding:10px 14px;color:'+col+';font-weight:700;border-bottom:1px solid #1e2d45>'+t+'</td>'+'<td style=padding:10px 14px;text-align:center;font-size:24px;font-weight:800;color:'+col+';border-bottom:1px solid #1e2d45>'+gr[t]+'</td></tr>';});wa.push('Total: '+done.length);var body='<div style=margin-bottom:14px;padding:14px;background:rgba(34,197,94,.08);border:1px solid rgba(34,197,94,.2);border-radius:10px;text-align:center>'+'<div style=font-size:11px;color:#94a3b8;margin-bottom:4px>'+_td+'</div>'+'<div style=font-size:44px;font-weight:800;color:#22c55e>'+done.length+'</div>'+'<div style=font-size:12px;color:#94a3b8;margin-top:2px>Total Completed</div></div>'+'<table style=width:100%;border-collapse:collapse>'+'<thead><tr><th style=padding:8px 14px;text-align:left;color:#94a3b8;font-size:11px;font-weight:600;border-bottom:2px solid #1e2d45>TEAM</th>'+'<th style=padding:8px 14px;text-align:center;color:#94a3b8;font-size:11px;font-weight:600;border-bottom:2px solid #1e2d45>JOBS</th></tr></thead>'+'<tbody>'+rows+'</tbody>'+'<tfoot><tr style=border-top:2px solid var(--acc)>'+'<td style=padding:10px 14px;color:#e2e8f0;font-weight:700>TOTAL</td>'+'<td style=padding:10px 14px;text-align:center;font-size:26px;font-weight:800;color:#22c55e>'+done.length+'</td>'+'</tr></tfoot></table>';var ex=document.getElementById('tSumM');if(ex)ex.remove();var ov=document.createElement('div');ov.id='tSumM';ov.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:9999;display:flex;align-items:center;justify-content:center;padding:16px';var inn=document.createElement('div');inn.style.cssText='background:#111827;border:1px solid #1e2d45;border-radius:14px;width:100%;max-width:420px;max-height:85vh;display:flex;flex-direction:column';var hd=document.createElement('div');hd.style.cssText='padding:14px;border-bottom:1px solid #1e2d45;display:flex;justify-content:space-between;align-items:center';hd.innerHTML='<b style=color:#e2e8f0;font-size:14px>Today Summary</b>';var cb=document.createElement('button');cb.textContent='x';cb.style.cssText='background:none;border:none;color:#94a3b8;font-size:20px;cursor:pointer';cb.onclick=function(){ov.remove();};hd.appendChild(cb);var bd=document.createElement('div');bd.style.cssText='padding:14px;overflow-y:auto;flex:1';bd.innerHTML=body;var ft=document.createElement('div');ft.style.cssText='padding:12px;border-top:1px solid #1e2d45';var wb=document.createElement('button');wb.textContent='Copy for WhatsApp';wb.style.cssText='width:100%;padding:10px;background:rgba(37,211,102,.15);border:1px solid rgba(37,211,102,.3);color:#25d366;border-radius:8px;cursor:pointer;font-weight:700;font-size:13px';wb.onclick=function(){var ta=document.createElement('textarea');ta.value=wa.join('\\n');ta.style.position='fixed';ta.style.top='-9999px';document.body.appendChild(ta);ta.select();document.execCommand('copy');document.body.removeChild(ta);this.textContent='Copied!';var b=this;setTimeout(function(){b.textContent='Copy for WhatsApp';},2000);};ft.appendChild(wb);inn.appendChild(hd);inn.appendChild(bd);inn.appendChild(ft);ov.appendChild(inn);document.body.appendChild(ov);ov.onclick=function(e){if(e.target===ov)ov.remove();};}",
+  ].join('\n');
+
+  return '<!DOCTYPE html>\n<html lang="en">\n<head>\n'+
+    '<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">\n'+
+    '<title>DEWA Cluster Finder \u2014 Team View</title>\n'+
+    '<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"><\/script>\n'+
+    '<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css"/>\n'+
+    '<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"><\/script>\n'+
+    '<style>\n'+CSS+'\n</style>\n'+
+    '</head>\n<body>\n'+BODY+'\n'+
+    '<script>\n'+TEAM_JS+'\n<\/script>\n'+
+    '<scr'+'ipt src="patch.js"><\/scr'+'ipt>\n'+'</body>\n</html>';
+}
+
+</script>
+</body>
+</html    "window._selTeam='';",
+    "var _wbUrl='';",
+    "function initWriteback(){try{_wbUrl=localStorage.getItem('dewa_wb_url')||'';}catch(e){}}",
+    "function writeBack(n,s,t,d){if(!_wbUrl)return;fetch(_wbUrl,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({notifNo:n,status:s,team:t,date:d})}).then(function(r){return r.json();}).then(function(d){if(d.ok)console.log('Sheet updated:'+n);}).catch(function(){});}",
+    "function selectTeamBtn(btn){window._selTeam=btn.getAttribute('data-team');['tbMubarak','tbYousaf','tbAzeem','tbMudasir'].forEach(function(id){var b=document.getElementById(id);if(!b)return;b.style.opacity='0.45';b.style.transform='scale(1)';b.style.boxShadow='none';b.style.borderWidth='2px';b.textContent=b.getAttribute('data-team');});btn.style.opacity='1';btn.style.transform='scale(0.95)';btn.style.boxShadow='inset 0 3px 8px rgba(0,0,0,.5),0 0 0 3px '+btn.style.color+'55';btn.style.borderWidth='3px';btn.textContent='\u2713 '+btn.getAttribute('data-team');});btn.style.opacity='1';btn.style.transform='scale(1.12)';btn.style.fontWeight='900';btn.style.borderWidth='3px';btn.style.boxShadow='0 0 0 4px '+btn.style.color+'55';}"
+>
