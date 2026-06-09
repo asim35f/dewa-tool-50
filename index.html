@@ -339,22 +339,6 @@ function gSt(n){return jd(n).status||'Pending';}
 function sColor(r){return SC[String(r||'').trim().toLowerCase()]||'#eab308';}
 function sLabel(r){return SC_LBL[sColor(r)]||String(r);}
 function sCol(n){return sColor(gSt(n));}
-function gEst(
-'use strict';
-var SC={'complete':'#22c55e','completed':'#22c55e','pending':'#eab308','in progress':'#3b82f6','in-progress':'#3b82f6','inprogress':'#3b82f6','partially completed':'#f59e0b','partial':'#f59e0b','partially complete':'#f59e0b'};
-var SC_LBL={'#22c55e':'Completed','#eab308':'Pending','#3b82f6':'In Progress','#f59e0b':'Partially Completed'};
-var CC=['#00c9a7','#3b82f6','#f59e0b','#ef4444','#a855f7','#ec4899','#06b6d4','#84cc16','#f97316','#6366f1'];
-
-var allRows=[],pdfMap={},jobData={},pdfFileIds={};
-var clusters=[],lone=[],LM=null,mapMarkers=[];
-var curN=null,excelID='';
-
-function norm(s){return String(s||'').trim().replace(/\s+/g,' ');}
-function jd(n){return jobData[norm(n)]||{};}
-function gSt(n){return jd(n).status||'Pending';}
-function sColor(r){return SC[String(r||'').trim().toLowerCase()]||'#eab308';}
-function sLabel(r){return SC_LBL[sColor(r)]||String(r);}
-function sCol(n){return sColor(gSt(n));}
 function gEst(n){return jd(n).estArea||'';}
 function gAct(n){return jd(n).actualArea||'';}
 function ls(k,v){if(v===undefined){try{return localStorage.getItem(k);}catch(e){return null;}}else{try{localStorage.setItem(k,v);}catch(e){}}}
@@ -1225,7 +1209,6 @@ function openModal(n){
   document.getElementById('mPdfInfo').innerHTML=hp?'<span style="color:#22c55e">\u2705 '+pd.name+(pd.local?' \u2014 local':' \u2014 Google Drive')+'</span>':'<span style="color:var(--mut)">No PDF</span>';
   var pb=document.getElementById('mPdfBtn');if(pb){pb.disabled=!hp;pb.textContent=hp?'\uD83D\uDCC4 Open PDF':'\uD83D\uDCC4 No PDF';}
   // Lock state
-
   document.getElementById('mOv').classList.remove('hidden');document.body.style.overflow='hidden';
 }
 function closeM(){document.getElementById('mOv').classList.add('hidden');document.body.style.overflow='';curN=null;}
@@ -1255,7 +1238,6 @@ function markCompleteWithTeam(team){
   jobData[curN].completedDate=getTodayStr();
   closeM();reRender();updStats([].concat.apply([],clusters).concat(lone));
 }
-
 function openLinkedPdf(){if(curN)openPdf(curN);}
 function openJobGmap(){var job=findJob(curN);if(job)window.open('https://www.google.com/maps/search/?api=1&query='+job.lat+','+job.lon,'_blank');}
 
@@ -1507,5 +1489,11 @@ function makeTeamHTML(){
     '<scr'+'ipt src="patch.js"><\/scr'+'ipt>\n'+'</body>\n</html>';
 }
 
-.color+'55';btn.style.borderWidth='3px';btn.textContent='\u2713 '+btn.getAttribute('data-team');});btn.style.opacity='1';btn.style.transform='scale(1.12)';btn.style.fontWeight='900';btn.style.borderWidth='3px';btn.style.boxShadow='0 0 0 4px '+btn.style.color+'55';}"
+</script>
+</body>
+</html    "window._selTeam='';",
+    "var _wbUrl='';",
+    "function initWriteback(){try{_wbUrl=localStorage.getItem('dewa_wb_url')||'';}catch(e){}}",
+    "function writeBack(n,s,t,d){if(!_wbUrl)return;fetch(_wbUrl,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({notifNo:n,status:s,team:t,date:d})}).then(function(r){return r.json();}).then(function(d){if(d.ok)console.log('Sheet updated:'+n);}).catch(function(){});}",
+    "function selectTeamBtn(btn){window._selTeam=btn.getAttribute('data-team');['tbMubarak','tbYousaf','tbAzeem','tbMudasir'].forEach(function(id){var b=document.getElementById(id);if(!b)return;b.style.opacity='0.45';b.style.transform='scale(1)';b.style.boxShadow='none';b.style.borderWidth='2px';b.textContent=b.getAttribute('data-team');});btn.style.opacity='1';btn.style.transform='scale(0.95)';btn.style.boxShadow='inset 0 3px 8px rgba(0,0,0,.5),0 0 0 3px '+btn.style.color+'55';btn.style.borderWidth='3px';btn.textContent='\u2713 '+btn.getAttribute('data-team');});btn.style.opacity='1';btn.style.transform='scale(1.12)';btn.style.fontWeight='900';btn.style.borderWidth='3px';btn.style.boxShadow='0 0 0 4px '+btn.style.color+'55';}"
 >
