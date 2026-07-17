@@ -995,69 +995,99 @@ function doCluster(){
 }
 
 function buildClusterSummary(cls,ln){
-  var wrap=document.getElementById('clsSumWrap');if(!wrap)return;
+  var wrap=document.getElementById('clsSumWrap'); if(!wrap)return;
+
+  /* Build one row per cluster using SAME label as renderList */
   var rows=[];
-  cls.forEach(function(cl,i){
-    var e=0,a=0,cp=0;
+  cls.forEach(function(cl,ci){
+    var zn=(cl[0]&&cl[0].area||'').split('-').pop().trim();
+    var label='Cluster '+(ci+1)+(zn?' \u2014 '+zn:'');
+    var totEst=0,compAct=0,pendEst=0,compCnt=0,pendCnt=0;
     cl.forEach(function(j){
-      e+=parseFloat(gEst(j.notifNo))||0;
-      a+=parseFloat(gAct(j.notifNo))||0;
-      if((jd(j.notifNo).status||'').toLowerCase()==='completed')cp++;
+      var est=parseFloat(gEst(j.notifNo))||0;
+      var act=parseFloat(gAct(j.notifNo))||0;
+      var done=(jd(j.notifNo).status||'').toLowerCase().indexOf('complet')===0;
+      totEst+=est;
+      if(done){ compAct+=act; compCnt++; }
+      else     { pendEst+=est; pendCnt++; }
     });
-    rows.push({label:'Cluster '+(i+1),count:cl.length,est:e,act:a,pend:Math.max(0,e-a),comp:cp,pct:e>0?((a/e)*100).toFixed(0):0});
+    rows.push({label:label,total:cl.length,compCnt:compCnt,pendCnt:pendCnt,
+               totEst:totEst,compAct:compAct,pendEst:pendEst});
   });
+
+  /* Lone jobs row */
   if(ln.length){
-    var e=0,a=0,cp=0;
+    var totEst=0,compAct=0,pendEst=0,compCnt=0,pendCnt=0;
     ln.forEach(function(j){
-      e+=parseFloat(gEst(j.notifNo))||0;
-      a+=parseFloat(gAct(j.notifNo))||0;
-      if((jd(j.notifNo).status||'').toLowerCase()==='completed')cp++;
+      var est=parseFloat(gEst(j.notifNo))||0;
+      var act=parseFloat(gAct(j.notifNo))||0;
+      var done=(jd(j.notifNo).status||'').toLowerCase().indexOf('complet')===0;
+      totEst+=est;
+      if(done){ compAct+=act; compCnt++; }
+      else     { pendEst+=est; pendCnt++; }
     });
-    rows.push({label:'Lone Jobs',count:ln.length,est:e,act:a,pend:Math.max(0,e-a),comp:cp,pct:e>0?((a/e)*100).toFixed(0):0});
+    rows.push({label:'Lone Jobs',total:ln.length,compCnt:compCnt,pendCnt:pendCnt,
+               totEst:totEst,compAct:compAct,pendEst:pendEst});
   }
+
   if(!rows.length){wrap.style.display='none';return;}
-  var maxEst=Math.max.apply(null,rows.map(function(r){return r.est;}));
-  var sorted=rows.slice().sort(function(a,b){return b.est-a.est;});
-  var totE=0,totA=0,totJ=0;
-  rows.forEach(function(r){totE+=r.est;totA+=r.act;totJ+=r.count;});
-  var totPct=totE>0?((totA/totE)*100).toFixed(0):0;
-  var COLS=['#3b82f6','#f59e0b','#a855f7','#ef4444','#22c55e','#06b6d4','#ec4899','#84cc16'];
+
+  /* Sort by total estimated area descending */
+  var sorted=rows.slice().sort(function(a,b){return b.totEst-a.totEst;});
+  var maxEst=sorted[0].totEst;
+
+  /* Totals */
+  var gTotEst=0,gCompAct=0,gPendEst=0,gJobs=0,gComp=0,gPend=0;
+  rows.forEach(function(r){
+    gTotEst+=r.totEst; gCompAct+=r.compAct; gPendEst+=r.pendEst;
+    gJobs+=r.total; gComp+=r.compCnt; gPend+=r.pendCnt;
+  });
+
+  /* Update top badge */
+  var badge=document.getElementById('clsTopBadge');
+  if(badge) badge.textContent=sorted[0]?'Most qty: '+sorted[0].label+' \u2014 '+sorted[0].totEst.toFixed(2)+' m\u00b2':'';
+
+  /* Build table */
   var h='<table style="width:100%;border-collapse:collapse;font-size:12px">'
-    +'<tr style="background:#0f172a;color:#64748b;font-size:11px">'
-    +'<th style="padding:8px 10px;text-align:left">Cluster</th>'
-    +'<th style="padding:8px 6px;text-align:center">Jobs</th>'
-    +'<th style="padding:8px 10px;text-align:right">Est. m2</th>'
-    +'<th style="padding:8px 10px;text-align:right">Done m2</th>'
-    +'<th style="padding:8px 10px;text-align:right">Pending m2</th>'
-    +'<th style="padding:8px 10px;text-align:center">% Done</th>'
+    +'<tr style="background:#0d1421;color:#64748b;font-size:11px;text-transform:uppercase;letter-spacing:.5px">'
+    +'<th style="padding:8px 12px;text-align:left;font-weight:600">Cluster / Zone</th>'
+    +'<th style="padding:8px 8px;text-align:center">All Jobs</th>'
+    +'<th style="padding:8px 8px;text-align:center;color:#22c55e">Done</th>'
+    +'<th style="padding:8px 8px;text-align:center;color:#f59e0b">Pending</th>'
+    +'<th style="padding:8px 12px;text-align:right;color:#3b82f6">Total Est. m\u00b2</th>'
+    +'<th style="padding:8px 12px;text-align:right;color:#22c55e">Done m\u00b2</th>'
+    +'<th style="padding:8px 12px;text-align:right;color:#f59e0b">Pending m\u00b2</th>'
     +'</tr>';
+
+  var COLS=['#3b82f6','#f59e0b','#a855f7','#ef4444','#22c55e','#06b6d4','#ec4899','#84cc16','#f97316','#14b8a6'];
   sorted.forEach(function(r,i){
-    var top=(r.est===maxEst);
+    var top=(r.totEst===maxEst&&r.totEst>0);
     var bg=top?'rgba(0,201,167,0.07)':(i%2===0?'#111827':'#1a2235');
-    var bl=top?'3px solid #00c9a7':'3px solid transparent';
-    var pct=parseInt(r.pct);
-    var pc=pct>=80?'#22c55e':pct>=50?'#f59e0b':'#ef4444';
     var col=COLS[i%COLS.length];
-    h+='<tr style="background:'+bg+';border-left:'+bl+'">'
-     +'<td style="padding:8px 10px;color:'+(top?'#00c9a7':col)+';font-weight:'+(top?700:400)+'">'+(top?'&#127942; ':'')+r.label+'</td>'
-     +'<td style="padding:8px 6px;text-align:center;color:'+col+';font-weight:600">'+r.count+'</td>'
-     +'<td style="padding:8px 10px;text-align:right;color:#3b82f6">'+r.est.toFixed(1)+'</td>'
-     +'<td style="padding:8px 10px;text-align:right;color:#22c55e">'+r.act.toFixed(1)+'</td>'
-     +'<td style="padding:8px 10px;text-align:right;color:#f59e0b">'+r.pend.toFixed(1)+'</td>'
-     +'<td style="padding:8px 10px;text-align:center;color:'+pc+';font-weight:700">'+r.pct+'%</td>'
+    h+='<tr style="background:'+bg+';border-left:'+(top?'3px solid #00c9a7':'3px solid transparent')+'">'
+     +'<td style="padding:8px 12px;color:'+(top?'#00c9a7':col)+';font-weight:'+(top?700:500)+'">'
+     +(top?'&#127942; ':'')+r.label+'</td>'
+     +'<td style="padding:8px 8px;text-align:center;color:#e2e8f0;font-weight:600">'+r.total+'</td>'
+     +'<td style="padding:8px 8px;text-align:center;color:#22c55e">'+r.compCnt+'</td>'
+     +'<td style="padding:8px 8px;text-align:center;color:#f59e0b">'+r.pendCnt+'</td>'
+     +'<td style="padding:8px 12px;text-align:right;color:#3b82f6;font-family:monospace">'+r.totEst.toFixed(2)+'</td>'
+     +'<td style="padding:8px 12px;text-align:right;color:#22c55e;font-family:monospace">'+r.compAct.toFixed(2)+'</td>'
+     +'<td style="padding:8px 12px;text-align:right;color:#f59e0b;font-family:monospace">'+r.pendEst.toFixed(2)+'</td>'
      +'</tr>';
   });
-  h+='<tr style="background:#0f172a;border-top:1px solid #1e2d45;font-weight:700">'
-    +'<td style="padding:8px 10px;color:#00c9a7">TOTAL</td>'
-    +'<td style="padding:8px 6px;text-align:center;color:#3b82f6">'+totJ+'</td>'
-    +'<td style="padding:8px 10px;text-align:right;color:#3b82f6">'+totE.toFixed(1)+'</td>'
-    +'<td style="padding:8px 10px;text-align:right;color:#22c55e">'+totA.toFixed(1)+'</td>'
-    +'<td style="padding:8px 10px;text-align:right;color:#f59e0b">'+Math.max(0,totE-totA).toFixed(1)+'</td>'
-    +'<td style="padding:8px 10px;text-align:center;color:#00c9a7">'+totPct+'%</td>'
+
+  /* Grand total row */
+  h+='<tr style="background:#0d1421;border-top:2px solid #1e2d45;font-weight:700">'
+    +'<td style="padding:9px 12px;color:#00c9a7">GRAND TOTAL</td>'
+    +'<td style="padding:9px 8px;text-align:center;color:#e2e8f0">'+gJobs+'</td>'
+    +'<td style="padding:9px 8px;text-align:center;color:#22c55e">'+gComp+'</td>'
+    +'<td style="padding:9px 8px;text-align:center;color:#f59e0b">'+gPend+'</td>'
+    +'<td style="padding:9px 12px;text-align:right;color:#3b82f6;font-family:monospace">'+gTotEst.toFixed(2)+'</td>'
+    +'<td style="padding:9px 12px;text-align:right;color:#22c55e;font-family:monospace">'+gCompAct.toFixed(2)+'</td>'
+    +'<td style="padding:9px 12px;text-align:right;color:#f59e0b;font-family:monospace">'+gPendEst.toFixed(2)+'</td>'
     +'</tr></table>';
+
   document.getElementById('clsSumTbl').innerHTML=h;
-  var badge=document.getElementById('clsTopBadge');
-  if(badge&&sorted.length)badge.textContent='Most qty: '+sorted[0].label+' — '+sorted[0].est.toFixed(1)+' m2 estimated';
   wrap.style.display='block';
 }
 

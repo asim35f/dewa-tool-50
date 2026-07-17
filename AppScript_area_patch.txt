@@ -1,0 +1,39 @@
+════════════════════════════════════════════════════════
+APPS SCRIPT PATCH — Add Area/Zone to getReportData
+════════════════════════════════════════════════════════
+
+In your Apps Script, find the getReportData() function.
+Find this block inside it:
+
+      out.push({
+        notifNo       : notif,
+        assignedDate  : String(data[i][ASSIGNED_DATE_COL - 1] || '').trim(),
+        estArea       : String(data[i][EST_AREA_COL  - 1] || '').trim(),
+        status        : String(data[i][STATUS_COL   - 1] || '').trim(),
+        actualArea    : String(data[i][ACTUAL_COL   - 1] || '').trim(),
+        team          : String(data[i][TEAM_COL     - 1] || '').trim(),
+        completedDate : formatDate(data[i][DATE_COL - 1]),
+        dewaEngineer  : String(data[i][ENGINEER_COL - 1] || '').trim(),
+        notes         : String(data[i][NOTES_COL   - 1] || '').trim()
+      });
+
+REPLACE IT WITH:
+
+      out.push({
+        notifNo       : notif,
+        assignedDate  : String(data[i][ASSIGNED_DATE_COL - 1] || '').trim(),
+        estArea       : String(data[i][EST_AREA_COL  - 1] || '').trim(),
+        status        : String(data[i][STATUS_COL   - 1] || '').trim(),
+        actualArea    : String(data[i][ACTUAL_COL   - 1] || '').trim(),
+        team          : String(data[i][TEAM_COL     - 1] || '').trim(),
+        completedDate : formatDate(data[i][DATE_COL - 1]),
+        dewaEngineer  : String(data[i][ENGINEER_COL - 1] || '').trim(),
+        notes         : String(data[i][NOTES_COL   - 1] || '').trim(),
+        area          : String(data[i][6] || '').trim()   // Column G — Area / Zone
+      });
+
+Then Deploy → Manage deployments → Edit → New Version → Deploy.
+
+After this, the report.html cluster summary will group
+by Area / Zone (Column G) exactly like the admin map clusters.
+════════════════════════════════════════════════════════
