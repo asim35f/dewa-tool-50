@@ -236,6 +236,8 @@ hr.dv{border:none;border-top:1px solid var(--brd);margin:12px 0}
   <div class="stat" style="border-left-color:#22c55e"><div class="v" id="sDone"  style="color:#22c55e">0</div><div class="l">Done m&#178;</div></div>
   <div class="stat" style="border-left-color:#eab308"><div class="v" id="sPArea" style="color:#eab308">0</div><div class="l">Pending m&#178;</div></div>
   <div class="stat" style="border-left-color:#00c9a7"><div class="v" id="sPct"   style="color:#00c9a7">0%</div><div class="l">Completion</div></div>
+<div id="clsSumWrap" style="display:none;margin:10px 0 4px;background:#111827;border:1px solid #1e2d45;border-radius:12px;overflow:hidden"><div style="display:flex;align-items:center;justify-content:space-between;padding:10px 14px 8px;background:#1a2235;border-bottom:1px solid #1e2d45"><span style="color:#00c9a7;font-weight:700;font-size:13px">&#128205; Cluster-wise Quantity Summary</span><span id="clsTopBadge" style="color:#f59e0b;font-size:11px;font-weight:600"></span></div><div id="clsSumTbl"></div></div>
+
 </div>
 <div class="sfb hidden" id="sfb" style="align-items:center;gap:8px">
   <span>&#128269;</span>
@@ -989,7 +991,76 @@ function doCluster(){
   }else{
     initMap();drawMap(clusters,lone);renderList(clusters,lone);
   }
+  buildClusterSummary(clusters,lone);
 }
+
+function buildClusterSummary(cls,ln){
+  var wrap=document.getElementById('clsSumWrap');if(!wrap)return;
+  var rows=[];
+  cls.forEach(function(cl,i){
+    var e=0,a=0,cp=0;
+    cl.forEach(function(j){
+      e+=parseFloat(gEst(j.notifNo))||0;
+      a+=parseFloat(gAct(j.notifNo))||0;
+      if((jd(j.notifNo).status||'').toLowerCase()==='completed')cp++;
+    });
+    rows.push({label:'Cluster '+(i+1),count:cl.length,est:e,act:a,pend:Math.max(0,e-a),comp:cp,pct:e>0?((a/e)*100).toFixed(0):0});
+  });
+  if(ln.length){
+    var e=0,a=0,cp=0;
+    ln.forEach(function(j){
+      e+=parseFloat(gEst(j.notifNo))||0;
+      a+=parseFloat(gAct(j.notifNo))||0;
+      if((jd(j.notifNo).status||'').toLowerCase()==='completed')cp++;
+    });
+    rows.push({label:'Lone Jobs',count:ln.length,est:e,act:a,pend:Math.max(0,e-a),comp:cp,pct:e>0?((a/e)*100).toFixed(0):0});
+  }
+  if(!rows.length){wrap.style.display='none';return;}
+  var maxEst=Math.max.apply(null,rows.map(function(r){return r.est;}));
+  var sorted=rows.slice().sort(function(a,b){return b.est-a.est;});
+  var totE=0,totA=0,totJ=0;
+  rows.forEach(function(r){totE+=r.est;totA+=r.act;totJ+=r.count;});
+  var totPct=totE>0?((totA/totE)*100).toFixed(0):0;
+  var COLS=['#3b82f6','#f59e0b','#a855f7','#ef4444','#22c55e','#06b6d4','#ec4899','#84cc16'];
+  var h='<table style="width:100%;border-collapse:collapse;font-size:12px">'
+    +'<tr style="background:#0f172a;color:#64748b;font-size:11px">'
+    +'<th style="padding:8px 10px;text-align:left">Cluster</th>'
+    +'<th style="padding:8px 6px;text-align:center">Jobs</th>'
+    +'<th style="padding:8px 10px;text-align:right">Est. m2</th>'
+    +'<th style="padding:8px 10px;text-align:right">Done m2</th>'
+    +'<th style="padding:8px 10px;text-align:right">Pending m2</th>'
+    +'<th style="padding:8px 10px;text-align:center">% Done</th>'
+    +'</tr>';
+  sorted.forEach(function(r,i){
+    var top=(r.est===maxEst);
+    var bg=top?'rgba(0,201,167,0.07)':(i%2===0?'#111827':'#1a2235');
+    var bl=top?'3px solid #00c9a7':'3px solid transparent';
+    var pct=parseInt(r.pct);
+    var pc=pct>=80?'#22c55e':pct>=50?'#f59e0b':'#ef4444';
+    var col=COLS[i%COLS.length];
+    h+='<tr style="background:'+bg+';border-left:'+bl+'">'
+     +'<td style="padding:8px 10px;color:'+(top?'#00c9a7':col)+';font-weight:'+(top?700:400)+'">'+(top?'&#127942; ':'')+r.label+'</td>'
+     +'<td style="padding:8px 6px;text-align:center;color:'+col+';font-weight:600">'+r.count+'</td>'
+     +'<td style="padding:8px 10px;text-align:right;color:#3b82f6">'+r.est.toFixed(1)+'</td>'
+     +'<td style="padding:8px 10px;text-align:right;color:#22c55e">'+r.act.toFixed(1)+'</td>'
+     +'<td style="padding:8px 10px;text-align:right;color:#f59e0b">'+r.pend.toFixed(1)+'</td>'
+     +'<td style="padding:8px 10px;text-align:center;color:'+pc+';font-weight:700">'+r.pct+'%</td>'
+     +'</tr>';
+  });
+  h+='<tr style="background:#0f172a;border-top:1px solid #1e2d45;font-weight:700">'
+    +'<td style="padding:8px 10px;color:#00c9a7">TOTAL</td>'
+    +'<td style="padding:8px 6px;text-align:center;color:#3b82f6">'+totJ+'</td>'
+    +'<td style="padding:8px 10px;text-align:right;color:#3b82f6">'+totE.toFixed(1)+'</td>'
+    +'<td style="padding:8px 10px;text-align:right;color:#22c55e">'+totA.toFixed(1)+'</td>'
+    +'<td style="padding:8px 10px;text-align:right;color:#f59e0b">'+Math.max(0,totE-totA).toFixed(1)+'</td>'
+    +'<td style="padding:8px 10px;text-align:center;color:#00c9a7">'+totPct+'%</td>'
+    +'</tr></table>';
+  document.getElementById('clsSumTbl').innerHTML=h;
+  var badge=document.getElementById('clsTopBadge');
+  if(badge&&sorted.length)badge.textContent='Most qty: '+sorted[0].label+' — '+sorted[0].est.toFixed(1)+' m2 estimated';
+  wrap.style.display='block';
+}
+
 function updStats(jobs){
   var e=0,a=0;
   jobs.forEach(function(j){e+=parseFloat(gEst(j.notifNo))||0;a+=parseFloat(gAct(j.notifNo))||0;});
