@@ -161,7 +161,7 @@ tfoot td.red{color:var(--red);font-size:14px;font-weight:800;text-align:center}
 
   </div><!-- /row 1 -->
 
-  <!-- Row 2: Monthly Engineer (left) + Date-wise (right) -->
+  <!-- Row 2: Monthly Engineer Summary -->
   <div class="grid-2">
 
     <!-- Monthly DEWA Engineer Summary -->
@@ -178,28 +178,7 @@ tfoot td.red{color:var(--red);font-size:14px;font-weight:800;text-align:center}
       <div class="card-foot"><button class="btn-img" onclick="shareCard('engCard','Engineer_Monthly_Report')">📸 Share as Image</button></div>
     </div>
 
-    <!-- Date-wise Work Order Summary -->
-    <div class="card" id="datewiseCard">
-      <div class="card-hdr">
-        <div><div class="card-title">📋 Date-wise Work Order Summary</div><div class="card-sub">Assigned date × DEWA engineer</div></div>
-      </div>
-      <div class="filters">
-        <label>Month:</label>
-        <select id="monthFilter" onchange="renderDatewise()"><option value="">All Months</option></select>
-        <label>Engineer:</label>
-        <select id="engFilter" onchange="renderDatewise()"><option value="">All Engineers</option></select>
-      </div>
-      <div class="filters">
-        <label>From:</label><input type="date" id="dtFrom">
-        <label>To:</label><input type="date" id="dtTo">
-        <button class="fbtn" onclick="renderDatewise()">Filter</button>
-        <button class="fbtn clr" onclick="clearFilter()">Clear</button>
-      </div>
-      <div class="tbl-wrap"><div id="datewiseTable"><div class="loading-msg"><div class="spinner"></div><br>Loading…</div></div></div>
-      <div class="card-foot"><button class="btn-img" onclick="shareCard('datewiseCard','Datewise_Report')">📸 Share as Image</button></div>
-    </div>
-
-  </div><!-- /row 2 -->
+</div><!-- /row 2 -->
 
 </div><!-- /page -->
 
@@ -251,7 +230,7 @@ function loadData(){
       st.textContent='✔ '+allJobs.length+' jobs';
       setTimeout(function(){st.textContent='';},3000);
       populateDropdowns();
-      renderToday(); renderWeekly(); renderMonthly(); renderEngMonthly(); renderDatewise(); renderClusterReport();
+      renderToday(); renderWeekly(); renderMonthly(); renderEngMonthly(); renderClusterReport();
     })
     .catch(function(e){
       st.textContent='❌';
@@ -264,19 +243,7 @@ function loadData(){
 
 // ── Populate dropdowns ────────────────────────────────────────────
 function populateDropdowns(){
-  var months={},engs={};
-  allJobs.forEach(function(j){
-    var d=parseDate(j.assignedDate);
-    if(d)months[monthKey(d)]=d.getFullYear()*100+d.getMonth();
-    if(j.dewaEngineer)engs[j.dewaEngineer]=1;
-  });
-  var mSel=document.getElementById('monthFilter'),mCur=mSel.value;
-  var mList=Object.keys(months).sort(function(a,b){return months[b]-months[a];});
-  mSel.innerHTML='<option value="">All Months</option>';
-  mList.forEach(function(m){var o=document.createElement('option');o.value=m;o.textContent=m;if(m===mCur)o.selected=true;mSel.appendChild(o);});
-  var eSel=document.getElementById('engFilter'),eCur=eSel.value;
-  eSel.innerHTML='<option value="">All Engineers</option>';
-  Object.keys(engs).sort().forEach(function(e){var o=document.createElement('option');o.value=e;o.textContent=e;if(e===eCur)o.selected=true;eSel.appendChild(o);});
+  /* date-wise filters removed — no dropdowns needed */
 }
 
 
@@ -485,55 +452,6 @@ function renderEngMonthly(){
     +'<td class="r">'+gAct.toFixed(1)+'</td>'
     +'</tr></tfoot></table>';
   document.getElementById('engTable').innerHTML=html;
-}
-
-// ── Date-wise ─────────────────────────────────────────────────────
-function clearFilter(){
-  document.getElementById('dtFrom').value='';document.getElementById('dtTo').value='';
-  document.getElementById('engFilter').value='';document.getElementById('monthFilter').value='';
-  renderDatewise();
-}
-function renderDatewise(){
-  var fromVal=document.getElementById('dtFrom').value,toVal=document.getElementById('dtTo').value;
-  var engVal=document.getElementById('engFilter').value,monVal=document.getElementById('monthFilter').value;
-  var fromD=fromVal?new Date(fromVal+'T00:00:00'):null,toD=toVal?new Date(toVal+'T23:59:59'):null;
-  var groups={};
-  allJobs.forEach(function(j){
-    var ad=j.assignedDate||'',eng=j.dewaEngineer||'Unknown',key=ad+'|||'+eng;
-    if(engVal&&eng!==engVal)return;
-    if(monVal){var pd=parseDate(ad);if(!pd||monthKey(pd)!==monVal)return;}
-    if(fromD||toD){var pd2=parseDate(ad);if(!pd2)return;if(fromD&&pd2<fromD)return;if(toD&&pd2>toD)return;}
-    if(!groups[key]){var sk=parseDate(ad)?parseDate(ad).getTime():0;groups[key]={date:ad,engineer:eng,total:0,completed:0,pending:0,estArea:0,actArea:0,sortKey:sk};}
-    var g=groups[key];g.total++;g.estArea+=parseFloat(j.estArea)||0;
-    if(j.status==='Completed'){g.completed++;g.actArea+=parseFloat(j.actualArea)||0;}else g.pending++;
-  });
-  var rows=Object.values(groups).sort(function(a,b){return b.sortKey-a.sortKey;});
-  if(!rows.length){document.getElementById('datewiseTable').innerHTML='<div class="empty">No work orders found.</div>';return;}
-  var gTot=0,gComp=0,gPend=0,gEst=0,gAct=0,lastDate='';
-  var html='<table><thead><tr><th>Date</th><th>DEWA Engineer</th><th class="c">Total</th><th class="c">Done</th><th class="c">Pending</th><th class="r">Est. m²</th><th class="r">Actual m²</th></tr></thead><tbody>';
-  rows.forEach(function(g){
-    if(lastDate&&g.date!==lastDate)html+='<tr class="sep-row"><td colspan="7"></td></tr>';
-    lastDate=g.date;
-    gTot+=g.total;gComp+=g.completed;gPend+=g.pending;gEst+=g.estArea;gAct+=g.actArea;
-    html+='<tr>'
-      +'<td style="font-size:10px;color:#94a3b8;font-weight:600">'+g.date+'</td>'
-      +'<td style="font-size:10px;font-weight:700;color:#818cf8">'+g.engineer+'</td>'
-      +'<td class="c">'+g.total+'</td>'
-      +'<td class="c grn">'+g.completed+'</td>'
-      +'<td class="c '+(g.pending>0?'red':'grn')+'">'+g.pending+'</td>'
-      +'<td class="r" style="color:var(--ylw)">'+g.estArea.toFixed(1)+'</td>'
-      +'<td class="r" style="color:var(--acc)">'+g.actArea.toFixed(1)+'</td>'
-      +'</tr>';
-  });
-  html+='</tbody><tfoot><tr>'
-    +'<td colspan="2"><b>GRAND TOTAL</b></td>'
-    +'<td class="c">'+gTot+'</td>'
-    +'<td class="c grn">'+gComp+'</td>'
-    +'<td class="c '+(gPend>0?'red':'grn')+'">'+gPend+'</td>'
-    +'<td class="r" style="color:var(--ylw);font-size:12px">'+gEst.toFixed(1)+'</td>'
-    +'<td class="r">'+gAct.toFixed(1)+'</td>'
-    +'</tr></tfoot></table>';
-  document.getElementById('datewiseTable').innerHTML=html;
 }
 
 // ── Share as Image ────────────────────────────────────────────────

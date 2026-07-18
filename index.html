@@ -988,10 +988,11 @@ function doCluster(){
     var _fc2=clusters.map(function(c){return c.filter(function(j){return getJobMonthKey(j.date)===_activeMonth;});}).filter(function(c){return c.length;});
     var _ln2=lone.filter(function(j){return getJobMonthKey(j.date)===_activeMonth;});
     initMap();drawMap(_fc2,_ln2);renderList(_fc2,_ln2);
+    buildClusterSummary(_fc2,_ln2);
   }else{
     initMap();drawMap(clusters,lone);renderList(clusters,lone);
+    buildClusterSummary(clusters,lone);
   }
-  buildClusterSummary(clusters,lone);
 }
 
 function buildClusterSummary(cls,ln){
@@ -1246,8 +1247,10 @@ function reRender(){
     var _fc=clusters.map(function(c){return c.filter(function(j){return getJobMonthKey(j.date)===_activeMonth;});}).filter(function(c){return c.length;});
     var _ln=lone.filter(function(j){return getJobMonthKey(j.date)===_activeMonth;});
     updStats(_mj);initMap();drawMap(_fc,_ln);renderList(_fc,_ln);
+    buildClusterSummary(_fc,_ln);
   }else{
     updStats(_a);initMap();drawMap(clusters,lone);renderList(clusters,lone);
+    buildClusterSummary(clusters,lone);
   }
 }
 
