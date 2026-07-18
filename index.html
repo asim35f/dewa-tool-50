@@ -237,8 +237,6 @@ hr.dv{border:none;border-top:1px solid var(--brd);margin:12px 0}
   <div class="stat" style="border-left-color:#eab308"><div class="v" id="sPArea" style="color:#eab308">0</div><div class="l">Pending m&#178;</div></div>
   <div class="stat" style="border-left-color:#00c9a7"><div class="v" id="sPct"   style="color:#00c9a7">0%</div><div class="l">Completion</div></div>
 </div>
-<div id="clsSumWrap" style="display:none;margin:10px 0 4px;background:#111827;border:1px solid #1e2d45;border-radius:12px;overflow:hidden"><div style="display:flex;align-items:center;justify-content:space-between;padding:10px 14px 8px;background:#1a2235;border-bottom:1px solid #1e2d45"><span style="color:#00c9a7;font-weight:700;font-size:13px">&#128205; Cluster-wise Quantity Summary</span><span id="clsTopBadge" style="color:#f59e0b;font-size:11px;font-weight:600"></span></div><div id="clsSumTbl"></div></div>
-
 <div class="sfb hidden" id="sfb" style="align-items:center;gap:8px">
   <span>&#128269;</span>
   <input type="text" id="srch" placeholder="Search notification / street&hellip;" oninput="doFilter()" style="flex:1">
@@ -988,108 +986,9 @@ function doCluster(){
     var _fc2=clusters.map(function(c){return c.filter(function(j){return getJobMonthKey(j.date)===_activeMonth;});}).filter(function(c){return c.length;});
     var _ln2=lone.filter(function(j){return getJobMonthKey(j.date)===_activeMonth;});
     initMap();drawMap(_fc2,_ln2);renderList(_fc2,_ln2);
-    buildClusterSummary(_fc2,_ln2);
-  }else{
+      }else{
     initMap();drawMap(clusters,lone);renderList(clusters,lone);
-    buildClusterSummary(clusters,lone);
-  }
-}
-
-function buildClusterSummary(cls,ln){
-  var wrap=document.getElementById('clsSumWrap'); if(!wrap)return;
-
-  /* Build one row per cluster using SAME label as renderList */
-  var rows=[];
-  cls.forEach(function(cl,ci){
-    var zn=(cl[0]&&cl[0].area||'').split('-').pop().trim();
-    var label='Cluster '+(ci+1)+(zn?' \u2014 '+zn:'');
-    var totEst=0,compAct=0,pendEst=0,compCnt=0,pendCnt=0;
-    cl.forEach(function(j){
-      var est=parseFloat(gEst(j.notifNo))||0;
-      var act=parseFloat(gAct(j.notifNo))||0;
-      var done=(jd(j.notifNo).status||'').toLowerCase().indexOf('complet')===0;
-      totEst+=est;
-      if(done){ compAct+=act; compCnt++; }
-      else     { pendEst+=est; pendCnt++; }
-    });
-    rows.push({label:label,total:cl.length,compCnt:compCnt,pendCnt:pendCnt,
-               totEst:totEst,compAct:compAct,pendEst:pendEst});
-  });
-
-  /* Lone jobs row */
-  if(ln.length){
-    var totEst=0,compAct=0,pendEst=0,compCnt=0,pendCnt=0;
-    ln.forEach(function(j){
-      var est=parseFloat(gEst(j.notifNo))||0;
-      var act=parseFloat(gAct(j.notifNo))||0;
-      var done=(jd(j.notifNo).status||'').toLowerCase().indexOf('complet')===0;
-      totEst+=est;
-      if(done){ compAct+=act; compCnt++; }
-      else     { pendEst+=est; pendCnt++; }
-    });
-    rows.push({label:'Lone Jobs',total:ln.length,compCnt:compCnt,pendCnt:pendCnt,
-               totEst:totEst,compAct:compAct,pendEst:pendEst});
-  }
-
-  if(!rows.length){wrap.style.display='none';return;}
-
-  /* Sort by total estimated area descending */
-  var sorted=rows.slice().sort(function(a,b){return b.totEst-a.totEst;});
-  var maxEst=sorted[0].totEst;
-
-  /* Totals */
-  var gTotEst=0,gCompAct=0,gPendEst=0,gJobs=0,gComp=0,gPend=0;
-  rows.forEach(function(r){
-    gTotEst+=r.totEst; gCompAct+=r.compAct; gPendEst+=r.pendEst;
-    gJobs+=r.total; gComp+=r.compCnt; gPend+=r.pendCnt;
-  });
-
-  /* Update top badge */
-  var badge=document.getElementById('clsTopBadge');
-  if(badge) badge.textContent=sorted[0]?'Most qty: '+sorted[0].label+' \u2014 '+sorted[0].totEst.toFixed(2)+' m\u00b2':'';
-
-  /* Build table */
-  var h='<table style="width:100%;border-collapse:collapse;font-size:12px">'
-    +'<tr style="background:#0d1421;color:#64748b;font-size:11px;text-transform:uppercase;letter-spacing:.5px">'
-    +'<th style="padding:8px 12px;text-align:left;font-weight:600">Cluster / Zone</th>'
-    +'<th style="padding:8px 8px;text-align:center">All Jobs</th>'
-    +'<th style="padding:8px 8px;text-align:center;color:#22c55e">Done</th>'
-    +'<th style="padding:8px 8px;text-align:center;color:#f59e0b">Pending</th>'
-    +'<th style="padding:8px 12px;text-align:right;color:#3b82f6">Total Est. m\u00b2</th>'
-    +'<th style="padding:8px 12px;text-align:right;color:#22c55e">Done m\u00b2</th>'
-    +'<th style="padding:8px 12px;text-align:right;color:#f59e0b">Pending m\u00b2</th>'
-    +'</tr>';
-
-  var COLS=['#3b82f6','#f59e0b','#a855f7','#ef4444','#22c55e','#06b6d4','#ec4899','#84cc16','#f97316','#14b8a6'];
-  sorted.forEach(function(r,i){
-    var top=(r.totEst===maxEst&&r.totEst>0);
-    var bg=top?'rgba(0,201,167,0.07)':(i%2===0?'#111827':'#1a2235');
-    var col=COLS[i%COLS.length];
-    h+='<tr style="background:'+bg+';border-left:'+(top?'3px solid #00c9a7':'3px solid transparent')+'">'
-     +'<td style="padding:8px 12px;color:'+(top?'#00c9a7':col)+';font-weight:'+(top?700:500)+'">'
-     +(top?'&#127942; ':'')+r.label+'</td>'
-     +'<td style="padding:8px 8px;text-align:center;color:#e2e8f0;font-weight:600">'+r.total+'</td>'
-     +'<td style="padding:8px 8px;text-align:center;color:#22c55e">'+r.compCnt+'</td>'
-     +'<td style="padding:8px 8px;text-align:center;color:#f59e0b">'+r.pendCnt+'</td>'
-     +'<td style="padding:8px 12px;text-align:right;color:#3b82f6;font-family:monospace">'+r.totEst.toFixed(2)+'</td>'
-     +'<td style="padding:8px 12px;text-align:right;color:#22c55e;font-family:monospace">'+r.compAct.toFixed(2)+'</td>'
-     +'<td style="padding:8px 12px;text-align:right;color:#f59e0b;font-family:monospace">'+r.pendEst.toFixed(2)+'</td>'
-     +'</tr>';
-  });
-
-  /* Grand total row */
-  h+='<tr style="background:#0d1421;border-top:2px solid #1e2d45;font-weight:700">'
-    +'<td style="padding:9px 12px;color:#00c9a7">GRAND TOTAL</td>'
-    +'<td style="padding:9px 8px;text-align:center;color:#e2e8f0">'+gJobs+'</td>'
-    +'<td style="padding:9px 8px;text-align:center;color:#22c55e">'+gComp+'</td>'
-    +'<td style="padding:9px 8px;text-align:center;color:#f59e0b">'+gPend+'</td>'
-    +'<td style="padding:9px 12px;text-align:right;color:#3b82f6;font-family:monospace">'+gTotEst.toFixed(2)+'</td>'
-    +'<td style="padding:9px 12px;text-align:right;color:#22c55e;font-family:monospace">'+gCompAct.toFixed(2)+'</td>'
-    +'<td style="padding:9px 12px;text-align:right;color:#f59e0b;font-family:monospace">'+gPendEst.toFixed(2)+'</td>'
-    +'</tr></table>';
-
-  document.getElementById('clsSumTbl').innerHTML=h;
-  wrap.style.display='block';
+      }
 }
 
 function updStats(jobs){
@@ -1173,13 +1072,25 @@ function buildPopup(job,rc,cn){
 // Separate Details button to open modal
 function renderList(cl,ln){
   var el=document.getElementById('clList');el.innerHTML='';
-  cl.forEach(function(c,ci){
-    var cc=CC[ci%CC.length],sp=Math.round(sprd(c));
-    var card=document.createElement('div');card.className='ccard';
-    var jh='';
-    c.forEach(function(job){
+
+  /* Pre-compute pending stats for ALL clusters to find the max */
+  var clStats=cl.map(function(c){
+    var pCnt=0,pEst=0;
+    c.forEach(function(j){
+      var done=(jd(j.notifNo).status||'').toLowerCase().indexOf('complet')===0;
+      if(!done){pCnt++;pEst+=parseFloat(gEst(j.notifNo))||0;}
+    });
+    return{pCnt:pCnt,pEst:pEst};
+  });
+  var maxPendEst=clStats.reduce(function(m,s){return Math.max(m,s.pEst);},0);
+
+  /* Helper: build job rows HTML, optionally filtered to pending only */
+  function buildRows(jobs,cc){
+    var h='';
+    jobs.forEach(function(job){
       var sc=sCol(job.notifNo),hp=!!pdfFor(job.notifNo);
-      jh+='<div class="jr">'+
+      var done=(jd(job.notifNo).status||'').toLowerCase().indexOf('complet')===0;
+      h+='<div class="jr" data-pend="'+(done?'0':'1')+'">'+
         '<div class="jdot" style="background:'+sc+'"></div>'+
         '<span class="jn" style="color:'+cc+'" data-fly="'+job.lat+'|'+job.lon+'" title="Click to fly to pin on map">'+job.notifNo+'</span>'+
         '<span class="js">'+(job.street||job.area||'\u2014')+'</span>'+
@@ -1189,14 +1100,69 @@ function renderList(cl,ln){
         (jd(job.notifNo).completedDate?'<span style="font-size:10px;color:#22c55e;font-family:monospace;margin-left:6px">&#10003; '+jd(job.notifNo).completedDate+(jd(job.notifNo).team?' ('+jd(job.notifNo).team+')':'')+'</span>':'')+
         '<span class="jd">'+job.dim+'</span></div>';
     });
+    return h;
+  }
+
+  cl.forEach(function(c,ci){
+    var cc=CC[ci%CC.length],sp=Math.round(sprd(c));
+    var st=clStats[ci];
+    var isTop=(st.pEst===maxPendEst&&maxPendEst>0);
+    var card=document.createElement('div');card.className='ccard';
     var zn=(c[0].area||'').split('-').pop().trim();
+
+    /* Pending row badge */
+    var pendHtml='';
+    if(st.pCnt>0){
+      pendHtml='<div style="padding:4px 10px 6px;border-bottom:1px solid #1e2d45;display:flex;align-items:center;justify-content:space-between;gap:6px">'
+        +(isTop?'<span style="font-size:10px;font-weight:700;color:#f59e0b">&#127942; Most pending</span>':'<span></span>')
+        +'<span class="pend-tog" style="font-size:10px;font-weight:600;color:#f59e0b;background:rgba(245,158,11,0.1);border:1px solid rgba(245,158,11,0.3);border-radius:6px;padding:3px 8px;cursor:pointer;user-select:none" title="Click to show pending jobs only">'
+        +'&#9203; '+st.pCnt+' pending &mdash; '+st.pEst.toFixed(2)+' m&#178;'
+        +'</span>'
+        +'</div>';
+    } else {
+      pendHtml='<div style="padding:3px 10px 5px;font-size:10px;color:#22c55e;border-bottom:1px solid #1e2d45">&#10003; All jobs completed</div>';
+    }
+
     card.innerHTML=
-      '<div class="ch"><div class="cd" style="background:'+cc+'"></div><span class="ctit">Cluster '+(ci+1)+' \u2014 '+zn+'</span><span class="ccnt">'+c.length+' jobs</span></div>'+
-      '<div class="cj"><div style="font-size:10px;color:var(--mut);margin-bottom:4px;font-family:monospace">SPREAD: '+sp+'m</div>'+jh+'</div>';
+      '<div class="ch"><div class="cd" style="background:'+cc+'"></div>'
+      +'<span class="ctit">Cluster '+(ci+1)+' \u2014 '+zn+'</span>'
+      +'<span class="ccnt">'+c.length+' jobs</span></div>'
+      +pendHtml
+      +'<div class="cj"><div style="font-size:10px;color:var(--mut);margin-bottom:4px;font-family:monospace">SPREAD: '+sp+'m</div>'+buildRows(c,cc)+'</div>';
+
+    /* Click cluster header → fly to cluster on map */
     card.querySelector('.ch').onclick=function(){
       document.querySelectorAll('.ccard').forEach(function(x){x.classList.remove('active');});
-      card.classList.add('active');if(LM)LM.flyTo([ctr(c).lat,ctr(c).lon],15,{duration:0.8});
+      card.classList.add('active');
+      if(LM)LM.flyTo([ctr(c).lat,ctr(c).lon],15,{duration:0.8});
     };
+
+    /* Click pending badge → toggle show pending only */
+    var tog=card.querySelector('.pend-tog');
+    if(tog){
+      tog.addEventListener('click',function(e){
+        e.stopPropagation();
+        var cjEl=card.querySelector('.cj');
+        var active=tog.getAttribute('data-active')==='1';
+        if(active){
+          /* Show all jobs */
+          tog.removeAttribute('data-active');
+          tog.style.background='rgba(245,158,11,0.1)';
+          tog.style.color='#f59e0b';
+          cjEl.innerHTML='<div style="font-size:10px;color:var(--mut);margin-bottom:4px;font-family:monospace">SPREAD: '+sp+'m</div>'+buildRows(c,cc);
+        } else {
+          /* Show pending only */
+          tog.setAttribute('data-active','1');
+          tog.style.background='rgba(245,158,11,0.25)';
+          tog.style.color='#fbbf24';
+          var pendJobs=c.filter(function(j){return (jd(j.notifNo).status||'').toLowerCase().indexOf('complet')!==0;});
+          var rows=pendJobs.length?buildRows(pendJobs,cc):'<div style="padding:8px;font-size:11px;color:#22c55e">&#10003; No pending jobs in this cluster</div>';
+          cjEl.innerHTML='<div style="font-size:10px;color:#f59e0b;margin-bottom:4px;font-family:monospace">PENDING ONLY &#9203;</div>'+rows;
+        }
+      });
+    }
+
+    /* Bubble clicks: fly / pdf / details / maps */
     card.addEventListener('click',function(e){
       var fly=e.target.getAttribute('data-fly');
       var pdf=e.target.getAttribute('data-pdf');
@@ -1209,6 +1175,8 @@ function renderList(cl,ln){
     });
     el.appendChild(card);
   });
+
+  /* Lone jobs section — unchanged */
   if(ln.length){
     var sec=document.createElement('div');sec.className='ls';
     sec.innerHTML='<div class="lt">\u26AB '+ln.length+' standalone'+(ln.length!==1?' jobs':' job')+'</div>';
@@ -1239,6 +1207,7 @@ function renderList(cl,ln){
     el.appendChild(sec);
   }
 }
+
 function reRender(){
   if(!clusters.length&&!lone.length)return;
   var _a=[].concat.apply([],clusters).concat(lone);
@@ -1247,11 +1216,9 @@ function reRender(){
     var _fc=clusters.map(function(c){return c.filter(function(j){return getJobMonthKey(j.date)===_activeMonth;});}).filter(function(c){return c.length;});
     var _ln=lone.filter(function(j){return getJobMonthKey(j.date)===_activeMonth;});
     updStats(_mj);initMap();drawMap(_fc,_ln);renderList(_fc,_ln);
-    buildClusterSummary(_fc,_ln);
-  }else{
+      }else{
     updStats(_a);initMap();drawMap(clusters,lone);renderList(clusters,lone);
-    buildClusterSummary(clusters,lone);
-  }
+      }
 }
 
 // -- FILTER --------------------------------------------------------------------
