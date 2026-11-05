@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0b1220">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>DEWA Field App</title>
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<style>
+:root{
+  --bg:#0b1220;--panel:#121a2b;--panel2:#18223a;--line:#24314d;--text:#e6ecf5;--mut:#8b9ab4;
+  --acc:#00c9a7;--acc2:#0ea5e9;--pend:#eab308;--done:#22c55e;--urg:#ef4444;--iss:#f97316;--prog:#3b82f6;
+  --r:12px;--safe-b:env(safe-area-inset-bottom,0px);
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;height:100%;background:var(--bg);color:var(--text);font:15px/1.4 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+.hidden{display:none!important}
+.mono{font-family:ui-monospace,SFMono-Regular,Consolas,monospace}
+
+/* login */
+#login{min-height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px 16px}
+.brand{font-size:24px;font-weight:800;letter-spacing:.3px}
+.brand span{color:var(--acc)}
+.sub{color:var(--mut);font-size:13px;margin:4px 0 22px}
+.namegrid{display:grid;grid-template-columns:1fr 1fr;gap:10px;width:100%;max-width:380px}
+.namebtn{background:var(--panel);border:2px solid var(--line);border-radius:var(--r);padding:14px 8px;font-weight:700;font-size:15px}
+.namebtn.sel{border-color:var(--acc);background:rgba(0,201,167,.12)}
+.namebtn.admin{grid-column:1/-1;color:var(--mut);font-weight:600;font-size:13px;padding:10px}
+.pinrow{width:100%;max-width:380px;margin-top:16px;display:flex;gap:10px}
+.pinrow input{flex:1;background:var(--panel);border:2px solid var(--line);border-radius:var(--r);padding:13px;font-size:20px;letter-spacing:6px;text-align:center;min-width:0}
+.btn{background:var(--acc);color:#04221d;border:0;border-radius:var(--r);padding:13px 18px;font-weight:800}
+.btn:disabled{opacity:.5}
+.btn.ghost{background:var(--panel2);color:var(--text);border:1px solid var(--line);font-weight:600}
+.btn.warn{background:var(--iss);color:#200d00}
+.btn.full{width:100%}
+.err{color:#fca5a5;font-size:13px;min-height:18px;margin-top:10px;text-align:center}
+
+/* app shell */
+#app{display:flex;flex-direction:column;height:100%}
+header{display:flex;align-items:center;gap:8px;padding:10px 14px;background:var(--panel);border-bottom:1px solid var(--line)}
+header .who{font-weight:800;font-size:16px;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+header .who small{display:block;color:var(--mut);font-weight:500;font-size:11px}
+.pill{font-size:11px;padding:4px 9px;border-radius:99px;background:var(--panel2);border:1px solid var(--line);white-space:nowrap}
+.pill.off{color:#fca5a5;border-color:#7f1d1d}
+.pill.q{color:var(--pend);border-color:#713f12}
+.iconbtn{background:var(--panel2);border:1px solid var(--line);border-radius:10px;width:38px;height:38px;font-size:17px;flex:none}
+main{flex:1;overflow:auto;position:relative}
+nav{display:flex;background:var(--panel);border-top:1px solid var(--line);padding-bottom:var(--safe-b)}
+nav button{flex:1;background:none;border:0;padding:9px 2px 8px;color:var(--mut);font-size:11px;font-weight:600}
+nav button b{display:block;font-size:19px;line-height:1.2}
+nav button.on{color:var(--acc)}
+nav .badge{background:var(--iss);color:#200d00;border-radius:99px;font-size:10px;padding:0 5px;margin-left:2px}
+
+/* jobs list */
+.tools{position:sticky;top:0;z-index:5;background:var(--bg);padding:10px 12px 6px;border-bottom:1px solid var(--line)}
+.search{width:100%;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:10px 12px}
+.chips{display:flex;gap:6px;overflow-x:auto;padding:8px 0 2px;scrollbar-width:none}
+.chip{flex:none;background:var(--panel);border:1px solid var(--line);border-radius:99px;padding:6px 12px;font-size:13px;font-weight:600;color:var(--mut)}
+.chip.on{background:rgba(0,201,167,.14);border-color:var(--acc);color:var(--acc)}
+.chip .n{opacity:.75;font-weight:500}
+.sortrow{display:flex;align-items:center;justify-content:space-between;color:var(--mut);font-size:12px;padding-top:6px}
+.sortrow select{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:4px 6px;font-size:12px}
+.list{padding:10px 12px 20px;display:flex;flex-direction:column;gap:8px}
+.card{background:var(--panel);border:1px solid var(--line);border-left:5px solid var(--pend);border-radius:var(--r);padding:10px 12px}
+.card.done{border-left-color:var(--done)}
+.card.urgent{border-left-color:var(--urg)}
+.card.issue{border-left-color:var(--iss)}
+.card.wait{border-left-color:var(--prog)}
+.card .top{display:flex;align-items:center;gap:6px}
+.card .nn{font-weight:800;font-size:15px}
+.card .dist{margin-left:auto;color:var(--acc2);font-size:12px;font-weight:700;white-space:nowrap}
+.card .l2{font-size:13px;margin-top:3px}
+.card .l3{display:flex;flex-wrap:wrap;gap:4px 10px;color:var(--mut);font-size:12px;margin-top:4px}
+.tag{font-size:10px;font-weight:800;padding:2px 6px;border-radius:5px;letter-spacing:.3px}
+.tag.u{background:rgba(239,68,68,.18);color:#fca5a5}
+.tag.i{background:rgba(249,115,22,.18);color:#fdba74}
+.tag.d{background:rgba(34,197,94,.16);color:#86efac}
+.tag.w{background:rgba(59,130,246,.18);color:#93c5fd}
+.tag.p{background:rgba(234,179,8,.16);color:#fde047}
+.empty{color:var(--mut);text-align:center;padding:40px 10px}
+.more{margin:4px auto 10px;display:block}
+
+/* map */
+#map{position:absolute;inset:0}
+.mapbtns{position:absolute;right:10px;bottom:16px;z-index:500;display:flex;flex-direction:column;gap:8px}
+.legend{position:absolute;left:10px;bottom:16px;z-index:500;background:rgba(18,26,43,.92);border:1px solid var(--line);border-radius:10px;padding:6px 9px;font-size:11px;display:flex;gap:9px;flex-wrap:wrap;max-width:calc(100% - 80px)}
+.legend i{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:4px;vertical-align:-1px}
+.leaflet-popup-content-wrapper,.leaflet-popup-tip{background:var(--panel);color:var(--text)}
+.leaflet-container{background:#0f172a}
+
+/* sheet (job detail / dialogs) */
+.sheet{position:fixed;inset:0;z-index:1000;background:rgba(0,0,0,.6);display:flex;align-items:flex-end;justify-content:center}
+.sheet .box{background:var(--bg);width:100%;max-width:560px;max-height:94%;overflow:auto;border-radius:18px 18px 0 0;border:1px solid var(--line);padding:0 0 calc(16px + var(--safe-b))}
+.sheet .head{position:sticky;top:0;background:var(--bg);display:flex;align-items:center;gap:8px;padding:14px 16px 10px;border-bottom:1px solid var(--line);z-index:2}
+.sheet .head h3{margin:0;font-size:18px;flex:1}
+.sec{padding:12px 16px}
+.sec h4{margin:0 0 8px;font-size:12px;color:var(--mut);text-transform:uppercase;letter-spacing:.6px}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.kv{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:8px 10px;min-width:0}
+.kv.w{grid-column:1/-1}
+.kv label{display:block;color:var(--mut);font-size:11px}
+.kv div{font-weight:600;font-size:14px;overflow-wrap:anywhere}
+.acts{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
+.acts .btn{padding:11px 6px;font-size:13px}
+.note{border-radius:10px;padding:10px 12px;font-size:13px}
+.note.iss{background:rgba(249,115,22,.1);border:1px solid rgba(249,115,22,.4)}
+.note.ok{background:rgba(34,197,94,.08);border:1px solid rgba(34,197,94,.35)}
+.note.info{background:rgba(59,130,246,.08);border:1px solid rgba(59,130,246,.35)}
+.field{margin-bottom:10px}
+.field label{display:block;color:var(--mut);font-size:12px;margin-bottom:4px}
+.field input,.field select,.field textarea{width:100%;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:11px 12px}
+.field textarea{min-height:70px;resize:vertical}
+.photo{display:block;width:100%;background:rgba(14,165,233,.1);border:2px dashed rgba(14,165,233,.5);color:#7dd3fc;border-radius:12px;padding:16px;text-align:center;font-weight:700}
+.photo.ok{border-style:solid;border-color:var(--done);color:var(--done);background:rgba(34,197,94,.08)}
+.prev{display:block;max-width:100%;max-height:220px;margin:8px auto 0;border-radius:10px}
+.reasons{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px}
+.reasons button{background:var(--panel);border:1px solid var(--line);border-radius:99px;padding:8px 12px;font-size:13px}
+.reasons button.on{border-color:var(--iss);background:rgba(249,115,22,.15);color:#fdba74}
+
+/* summary / admin */
+.page{padding:14px 12px 24px}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px}
+.stat{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:10px;text-align:center}
+.stat b{display:block;font-size:22px}
+.stat span{font-size:11px;color:var(--mut)}
+table.t{width:100%;border-collapse:collapse;background:var(--panel);border:1px solid var(--line);border-radius:12px;overflow:hidden}
+table.t td,table.t th{padding:9px 12px;border-bottom:1px solid var(--line);text-align:left;font-size:14px}
+table.t th{font-size:11px;color:var(--mut);text-transform:uppercase}
+table.t td.r,table.t th.r{text-align:right}
+.dot{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:7px;vertical-align:-1px}
+.row2{display:flex;gap:8px;margin:12px 0}
+.row2>*{flex:1}
+.issue{background:var(--panel);border:1px solid var(--line);border-left:5px solid var(--iss);border-radius:12px;padding:10px 12px;margin-bottom:10px}
+.issue .meta{color:var(--mut);font-size:12px;margin:2px 0 8px}
+.teamrow{display:grid;grid-template-columns:1fr 84px 38px 38px;gap:6px;align-items:center;margin-bottom:6px}
+.teamrow input{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:9px;min-width:0}
+.teamrow input[type=color]{padding:2px;height:38px}
+.teamrow input[type=checkbox]{width:22px;height:22px;justify-self:center}
+.toast{position:fixed;left:50%;bottom:calc(80px + var(--safe-b));transform:translateX(-50%);background:#0f2a24;border:1px solid var(--acc);color:#a7f3d0;padding:10px 16px;border-radius:12px;z-index:3000;font-size:14px;max-width:90%;text-align:center}
+.toast.bad{background:#2a0f0f;border-color:#ef4444;color:#fecaca}
+.spin{display:inline-block;width:14px;height:14px;border:2px solid currentColor;border-right-color:transparent;border-radius:50%;animation:sp .8s linear infinite;vertical-align:-2px}
+@keyframes sp{to{transform:rotate(360deg)}}
+@media (min-width:700px){.sheet{align-items:center}.sheet .box{border-radius:18px}}
+</style>
+</head>
+<body>
+
+<section id="login" class="hidden">
+  <div class="brand">DEWA <span>Field App</span></div>
+  <div class="sub">Tiles reinstatement · Tap your name</div>
+  <div class="namegrid" id="nameGrid"></div>
+  <div class="pinrow">
+    <input id="pin" type="password" inputmode="numeric" autocomplete="off" maxlength="8" placeholder="PIN">
+    <button class="btn" id="loginBtn">Login</button>
+  </div>
+  <div class="err" id="loginErr"></div>
+</section>
+
+<section id="app" class="hidden">
+  <header>
+    <div class="who" id="who"></div>
+    <span class="pill" id="netPill">Online</span>
+    <button class="iconbtn" id="refreshBtn" title="Refresh">⟳</button>
+    <button class="iconbtn" id="menuBtn" title="Menu">☰</button>
+  </header>
+  <main id="main">
+    <div id="tab-jobs">
+      <div class="tools">
+        <input class="search" id="search" type="search" placeholder="Search notification, street, area…">
+        <div class="chips" id="chips"></div>
+        <div class="sortrow">
+          <span id="count"></span>
+          <label>Sort <select id="sort">
+            <option value="smart">Urgent, then nearest</option>
+            <option value="near">Nearest</option>
+            <option value="new">Newest first</option>
+            <option value="sr">Sr.#</option>
+          </select></label>
+        </div>
+      </div>
+      <div class="list" id="list"></div>
+    </div>
+    <div id="tab-map" class="hidden">
+      <div id="map"></div>
+      <div class="legend">
+        <span><i style="background:var(--urg)"></i>Urgent</span><span><i style="background:var(--pend)"></i>Pending</span>
+        <span><i style="background:var(--iss)"></i>Problem</span><span><i style="background:var(--done)"></i>Done</span>
+      </div>
+      <div class="mapbtns"><button class="iconbtn" id="locBtn" title="My location">◎</button></div>
+    </div>
+    <div id="tab-sum" class="hidden"><div class="page" id="sumPage"></div></div>
+    <div id="tab-issues" class="hidden"><div class="page" id="issuesPage"></div></div>
+    <div id="tab-team" class="hidden"><div class="page" id="teamPage"></div></div>
+  </main>
+  <nav id="nav"></nav>
+</section>
+
+<script src="config.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
