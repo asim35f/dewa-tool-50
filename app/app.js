@@ -4,7 +4,7 @@
 (function () {
   'use strict';
 
-  var VERSION = '1.0.0';
+  var VERSION = '1.1.0';
   var REASONS = ['Vehicle parked', 'No access / fence', 'Site closed', 'Security hold', 'Gate pass needed',
                  'Other contractor working', 'No interlock at location', 'Other'];
   var STATUSES = ['Pending', 'In Progress', 'Partially Completed', 'Completed'];
@@ -660,7 +660,10 @@
       h += '<div class="field" style="margin-top:18px"><label>Month (by completed date)</label><select id="sMonth">' + mList.map(function (m) { return '<option' + (m === sumMonth ? ' selected' : '') + '>' + esc(m) + '</option>'; }).join('') + '</select></div>';
       h += teamTable(S.jobs.filter(function (j) { return isDone(j) && monthOf(j.cdate) === sumMonth; }), 'Completed in ' + sumMonth);
     }
+    var engR = null;
     if (S.me.role === 'admin') {
+      engR = engRange();
+      h += engCard(engR);
       h += '<button class="btn ghost full" id="sHist" style="margin-top:14px">' + (S.allHistory ? 'Back to recent jobs only' : 'Load full history (all months)') + '</button>';
     } else {
       h += '<p style="color:var(--mut);font-size:12px;margin-top:12px">Phones keep the last ' + 2 + ' months of completed jobs.</p>';
@@ -674,6 +677,140 @@
     };
     $('sWa').onclick = function () { window.open('https://wa.me/?text=' + encodeURIComponent(text), '_blank'); };
     if ($('sHist')) $('sHist').onclick = function () { S.allHistory = !S.allHistory; loadJobs().then(renderSummary); };
+    if (engR) wireEng(engR);
+  }
+
+  // ─── admin: engineer summary (by assigned DATE, column C) ─────────────────
+  var eng = { mode: 'month', y: 0, m: 0, from: '', to: '' };
+  function pad2(n) { return (n < 10 ? '0' : '') + n; }
+  function isoKey(s) { var m = String(s || '').match(/^(\d{4})-(\d{2})-(\d{2})$/); return m ? +m[1] * 10000 + +m[2] * 100 + +m[3] : 0; }
+  function keyDmy(k) { return pad2(k % 100) + '.' + pad2(Math.floor(k / 100) % 100) + '.' + Math.floor(k / 10000); }
+  function engRange() {
+    if (!eng.y) {
+      var t = cdateKey(S.today || todayStr()) || (new Date().getFullYear() * 10000 + (new Date().getMonth() + 1) * 100);
+      eng.y = Math.floor(t / 10000); eng.m = Math.floor(t / 100) % 100 - 1;
+    }
+    if (eng.mode === 'custom') {
+      var a = isoKey(eng.from), b = isoKey(eng.to);
+      if (a && b && a > b) { var x = a; a = b; b = x; }
+      return { a: a || 0, b: b || 99999999, label: (a ? keyDmy(a) : 'Start') + ' to ' + (b ? keyDmy(b) : 'Today') };
+    }
+    var base = eng.y * 10000 + (eng.m + 1) * 100;
+    return { a: base + 1, b: base + 31, label: MON[eng.m] + ' ' + eng.y };
+  }
+  function engGroups(r) {
+    var g = {}, order = [];
+    S.jobs.forEach(function (j) {
+      var k = dmyKey(j.date);
+      if (!k || k < r.a || k > r.b) return;
+      var name = String(j.eng || '').replace(/\s+/g, ' ').trim();
+      var pr = (name.match(/^(\d{3,7})\b/) || [])[1];
+      var key = pr || name.toLowerCase() || '-';
+      if (!g[key]) { g[key] = { names: {}, n: 0, done: 0, est: 0, act: 0 }; order.push(key); }
+      var e = g[key];
+      e.names[name || '(no engineer)'] = (e.names[name || '(no engineer)'] || 0) + 1;
+      e.n++; e.est += +j.est || 0;
+      if (isDone(j)) { e.done++; e.act += +j.act || 0; }
+    });
+    var rows = order.map(function (k) {
+      var e = g[k], best = Object.keys(e.names).sort(function (a, b) { return e.names[b] - e.names[a]; })[0];
+      return { name: best, n: e.n, done: e.done, pend: e.n - e.done, est: e.est, act: e.act };
+    }).sort(function (a, b) { return b.n - a.n; });
+    var tot = rows.reduce(function (t, x) { t.n += x.n; t.done += x.done; t.pend += x.pend; t.est += x.est; t.act += x.act; return t; },
+      { name: 'TOTAL', n: 0, done: 0, pend: 0, est: 0, act: 0 });
+    return { rows: rows, tot: tot };
+  }
+  function engNeedsHistory(r) {
+    if (S.allHistory) return false;
+    var d = new Date(); d.setDate(d.getDate() - 55);
+    return r.a < d.getFullYear() * 10000 + (d.getMonth() + 1) * 100 + d.getDate();
+  }
+  function f1(x) { return (Math.round(x * 10) / 10).toFixed(1); }
+  function engCard(r) {
+    var h = '<div class="eng"><h3>👷 Engineer Summary</h3><div class="sub">Jobs by DEWA engineer (assigned date)</div>' +
+      '<div class="seg"><button data-em="month" class="' + (eng.mode === 'month' ? 'on' : '') + '">Month</button>' +
+      '<button data-em="custom" class="' + (eng.mode === 'custom' ? 'on' : '') + '">Custom dates</button></div>';
+    if (eng.mode === 'month') {
+      h += '<div class="mnav"><button id="eP" aria-label="Previous month">◀</button><b>' + esc(r.label) + '</b><button id="eN" aria-label="Next month">▶</button></div>';
+    } else {
+      h += '<div class="row2"><div class="field"><label>From</label><input type="date" id="eF" value="' + esc(eng.from) + '"></div>' +
+        '<div class="field"><label>To</label><input type="date" id="eT" value="' + esc(eng.to) + '"></div></div>';
+    }
+    if (engNeedsHistory(r)) return h + '<div class="empty"><span class="spin"></span> Loading older jobs…</div></div>';
+    var d = engGroups(r);
+    h += '<table class="t"><tr><th>DEWA Engineer</th><th class="r">Total</th><th class="r">Done</th><th class="r">Pend.</th><th class="r">Est. m²</th><th class="r">Act. m²</th></tr>';
+    h += d.rows.length ? d.rows.map(function (x) {
+      return '<tr><td>' + esc(x.name) + '</td><td class="r"><b>' + x.n + '</b></td><td class="r c-done">' + x.done + '</td><td class="r c-pend">' + x.pend +
+        '</td><td class="r c-est">' + f1(x.est) + '</td><td class="r c-act">' + f1(x.act) + '</td></tr>';
+    }).join('') : '<tr><td colspan="6" style="color:var(--mut)">No jobs with a date in ' + esc(r.label) + '</td></tr>';
+    var t = d.tot;
+    h += '<tr class="tot"><td>TOTAL</td><td class="r">' + t.n + '</td><td class="r c-done">' + t.done + '</td><td class="r c-pend">' + t.pend +
+      '</td><td class="r c-est">' + f1(t.est) + '</td><td class="r c-act">' + f1(t.act) + '</td></tr></table>';
+    h += '<button class="btn full share" id="eShare">📷 Share as Image</button></div>';
+    return h;
+  }
+  function wireEng(r) {
+    Array.prototype.forEach.call(document.querySelectorAll('[data-em]'), function (b) {
+      b.onclick = function () {
+        eng.mode = b.getAttribute('data-em');
+        if (eng.mode === 'custom' && !eng.from) {
+          var base = eng.y + '-' + pad2(eng.m + 1) + '-';
+          eng.from = base + '01'; eng.to = base + pad2(new Date(eng.y, eng.m + 1, 0).getDate());
+        }
+        renderSummary();
+      };
+    });
+    if ($('eP')) $('eP').onclick = function () { if (--eng.m < 0) { eng.m = 11; eng.y--; } renderSummary(); };
+    if ($('eN')) $('eN').onclick = function () { if (++eng.m > 11) { eng.m = 0; eng.y++; } renderSummary(); };
+    if ($('eF')) $('eF').onchange = function () { eng.from = this.value; renderSummary(); };
+    if ($('eT')) $('eT').onchange = function () { eng.to = this.value; renderSummary(); };
+    if ($('eShare')) $('eShare').onclick = function () { shareEngImage(r); };
+    if (engNeedsHistory(r)) {
+      S.allHistory = true;
+      loadJobs().then(function () { if (S.tab === 'sum') renderSummary(); });
+    }
+  }
+  function shareEngImage(r) {
+    var d = engGroups(r), rows = d.rows.concat([d.tot]);
+    var W = 960, RH = 58, TOP = 150, H = TOP + RH * rows.length + 70;
+    var c = document.createElement('canvas'); c.width = W; c.height = H;
+    var x = c.getContext('2d'), F = 'system-ui,-apple-system,Segoe UI,Roboto,sans-serif';
+    x.fillStyle = '#0b1220'; x.fillRect(0, 0, W, H);
+    x.fillStyle = '#e6ecf5'; x.font = 'bold 32px ' + F; x.fillText('DEWA Engineer Summary', 36, 60);
+    x.fillStyle = '#8b9ab4'; x.font = '20px ' + F; x.fillText('Jobs by DEWA engineer (assigned date)  ·  ' + r.label, 36, 96);
+    var cols = [[36, 'DEWA ENGINEER', 'left', '#93a4ff'], [520, 'TOTAL', 'right', '#ffffff'], [620, 'DONE', 'right', '#22c55e'],
+      [730, 'PENDING', 'right', '#ef4444'], [835, 'EST. M²', 'right', '#f59e0b'], [930, 'ACTUAL M²', 'right', '#00c9a7']];
+    x.font = 'bold 15px ' + F; x.fillStyle = '#8b9ab4';
+    cols.forEach(function (cl) { x.textAlign = cl[2]; x.fillText(cl[1], cl[0], TOP - 14); });
+    x.fillStyle = '#24314d'; x.fillRect(24, TOP, W - 48, 1);
+    rows.forEach(function (row, i) {
+      var y = TOP + RH * (i + 1), tot = i === rows.length - 1;
+      if (tot) { x.fillStyle = '#0f2a24'; x.fillRect(24, y - RH, W - 48, RH); x.fillStyle = '#00c9a7'; x.fillRect(24, y - RH, W - 48, 3); }
+      else { x.fillStyle = '#24314d'; x.fillRect(24, y, W - 48, 1); }
+      var name = row.name; x.font = (tot ? 'bold ' : '600 ') + '20px ' + F;
+      while (x.measureText(name).width > 420 && name.length > 4) name = name.slice(0, -2);
+      if (name !== row.name) name += '…';
+      var vals = [name, String(row.n), String(row.done), String(row.pend), f1(row.est), f1(row.act)];
+      vals.forEach(function (v, k) {
+        x.textAlign = cols[k][2]; x.fillStyle = tot && k === 0 ? '#ffffff' : cols[k][3];
+        x.font = (tot || k === 1 ? 'bold ' : k === 0 ? '600 ' : '') + (k === 0 ? 20 : 22) + 'px ' + F;
+        x.fillText(v, cols[k][0], y - RH / 2 + 8);
+      });
+    });
+    x.textAlign = 'left'; x.fillStyle = '#5b6b88'; x.font = '15px ' + F;
+    x.fillText('DEWA Field App  ·  ' + (S.today || todayStr()), 36, H - 24);
+    c.toBlob(function (blob) {
+      var fname = 'DEWA engineer summary ' + r.label.replace(/[^\w.-]+/g, ' ').trim() + '.png';
+      var file = typeof File === 'function' ? new File([blob], fname, { type: 'image/png' }) : null;
+      if (file && navigator.canShare && navigator.canShare({ files: [file] })) {
+        navigator.share({ files: [file], title: 'DEWA Engineer Summary' }).catch(function () {});
+      } else {
+        var a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = fname;
+        document.body.appendChild(a); a.click(); a.remove();
+        setTimeout(function () { URL.revokeObjectURL(a.href); }, 4000);
+        toast('Image saved');
+      }
+    }, 'image/png');
   }
   function groupByTeam(list) {
     var g = {};
