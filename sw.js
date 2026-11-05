@@ -1,62 +1,41 @@
-/* sw.js — DEWA Field Tool Service Worker
-   Strategy: NETWORK FIRST — always loads live from server.
-   Cache only used as fallback when there is no internet connection. */
-
-var CACHE = 'dewa-v1';
-var CACHE_URLS = [
-  './team.html',
-  './patch.js',
-  './camera-patch.js',
-  './progress-patch.js',
-  './manifest.json'
+/* DEWA Field App service worker: network first, cached copy when offline.
+   Requests to the Apps Script backend and to Google are never cached. */
+var CACHE = 'dewa-field-v2';
+var SHELL = [
+  './', './index.html', './app.js', './config.js', './manifest.json', './icon-192.png', './icon-512.png',
+  'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js',
+  'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css'
 ];
 
-/* Pre-cache files on first install */
-self.addEventListener('install', function(e){
-  e.waitUntil(
-    caches.open(CACHE).then(function(c){ return c.addAll(CACHE_URLS); })
-  );
+self.addEventListener('install', function (e) {
+  e.waitUntil(caches.open(CACHE).then(function (c) {
+    return Promise.all(SHELL.map(function (u) { return c.add(u).catch(function () {}); }));
+  }));
   self.skipWaiting();
 });
 
-/* Clean up old caches */
-self.addEventListener('activate', function(e){
-  e.waitUntil(
-    caches.keys().then(function(keys){
-      return Promise.all(
-        keys.filter(function(k){ return k !== CACHE; })
-            .map(function(k){ return caches.delete(k); })
-      );
-    })
-  );
+self.addEventListener('activate', function (e) {
+  e.waitUntil(caches.keys().then(function (keys) {
+    return Promise.all(keys.filter(function (k) { return k !== CACHE; }).map(function (k) { return caches.delete(k); }));
+  }));
   self.clients.claim();
 });
 
-/* NETWORK FIRST — always fetch live, cache only as offline fallback */
-self.addEventListener('fetch', function(e){
-  /* Never intercept Apps Script calls — always go direct to server */
-  if(e.request.url.indexOf('script.google.com') !== -1) return;
-  if(e.request.url.indexOf('googleapis.com') !== -1) return;
-
+self.addEventListener('fetch', function (e) {
+  var url = e.request.url;
+  if (e.request.method !== 'GET') return;
+  if (/script\.google|googleusercontent|googleapis|drive\.google|tile\.openstreetmap/.test(url)) return;
   e.respondWith(
-    fetch(e.request)
-      .then(function(resp){
-        /* Got live response — update the cache silently */
-        if(resp && resp.status === 200){
-          var clone = resp.clone();
-          caches.open(CACHE).then(function(c){ c.put(e.request, clone); });
-        }
-        return resp;
-      })
-      .catch(function(){
-        /* No internet — serve from cache so app still opens */
-        return caches.match(e.request)
-          .then(function(cached){
-            return cached || new Response(
-              '<h2 style="font-family:sans-serif;padding:20px">No internet connection.<br>Please connect and refresh.</h2>',
-              { headers: {'Content-Type':'text/html'} }
-            );
-          });
-      })
+    fetch(e.request).then(function (resp) {
+      if (resp && resp.status === 200) {
+        var copy = resp.clone();
+        caches.open(CACHE).then(function (c) { c.put(e.request, copy); });
+      }
+      return resp;
+    }).catch(function () {
+      return caches.match(e.request, { ignoreSearch: true }).then(function (hit) {
+        return hit || caches.match('./index.html');
+      });
+    })
   );
 });
