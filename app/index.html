@@ -11,6 +11,72 @@
 <link rel="icon" href="icon-192.png">
 <link rel="apple-touch-icon" href="icon-192.png">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<link rel="preload" as="image" href="img/trc-logo.png">
+<link rel="preload" as="image" href="img/dewa-logo.png">
+<style>
+/* ── launch intro (2 s, once per app launch) ── */
+#intro{position:fixed;inset:0;z-index:10000;display:flex;align-items:center;justify-content:center;overflow:hidden;
+  background:#071B35;color:#fff;font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --H:clamp(62px,16.5vw,112px);--P:calc(var(--H)*.14)}
+#intro *{box-sizing:border-box}
+#intro .in-bg{position:absolute;inset:0;opacity:0;
+  background:radial-gradient(120% 80% at 50% 38%,#0e3566 0%,#0a2647 38%,#071B35 72%),#071B35}
+#intro .in-bg::after{content:"";position:absolute;inset:0;
+  background:radial-gradient(60% 40% at 50% 46%,rgba(8,120,201,.22),transparent 70%)}
+#intro .in-sweep{position:absolute;top:-20%;bottom:-20%;left:-60%;width:45%;opacity:0;transform:skewX(-18deg);
+  background:linear-gradient(90deg,transparent,rgba(120,190,255,.07) 45%,rgba(160,215,255,.12) 50%,rgba(120,190,255,.07) 55%,transparent)}
+#intro .in-stage{position:relative;display:flex;flex-direction:column;align-items:center;padding:0 16px;max-width:100%}
+#intro .in-logos{display:flex;align-items:flex-start;justify-content:center;gap:clamp(12px,4vw,30px)}
+#intro .in-brand{margin:0;display:flex;flex-direction:column;align-items:center;opacity:0}
+#intro .in-plate{position:relative;height:var(--H);padding:var(--P);background:#fff;border-radius:calc(var(--H)*.16);overflow:hidden;
+  box-shadow:0 10px 30px rgba(0,0,0,.35),0 0 0 1px rgba(255,255,255,.08),0 0 28px rgba(8,120,201,.18)}
+#intro .in-plate img{display:block;height:100%;width:auto}
+#intro .in-plate::after{content:"";position:absolute;top:0;bottom:0;left:-70%;width:45%;transform:skewX(-20deg);
+  background:linear-gradient(90deg,transparent,rgba(255,255,255,.55),transparent)}
+#intro figcaption{margin-top:calc(var(--H)*.13);max-width:calc(var(--H)*2.6);text-align:center;color:#a9c3e3;
+  font-size:clamp(7.5px,1.9vw,10.5px);font-weight:600;letter-spacing:.14em;line-height:1.45}
+#intro .in-sep{align-self:stretch;max-height:var(--H);display:flex;align-items:center}
+#intro .in-sep i{display:block;width:2px;height:calc(var(--H)*.82);border-radius:2px;transform:scaleY(0);
+  background:linear-gradient(180deg,transparent,#00A86B 30%,#0878C9 70%,transparent);
+  box-shadow:0 0 10px rgba(0,168,107,.55),0 0 18px rgba(8,120,201,.35)}
+#intro .in-line{position:relative;width:min(78vw,520px);height:2px;margin:clamp(16px,3.6vw,26px) 0 clamp(12px,2.6vw,18px);
+  transform:scaleX(0);overflow:hidden;
+  background:linear-gradient(90deg,transparent,#00A86B 25%,#0878C9 75%,transparent);box-shadow:0 0 12px rgba(8,120,201,.45)}
+#intro .in-line::after{content:"";position:absolute;top:0;bottom:0;left:-30%;width:30%;
+  background:linear-gradient(90deg,transparent,#fff,transparent)}
+#intro .in-title{margin:0;font-size:clamp(17px,4.6vw,28px);font-weight:800;letter-spacing:.32em;padding-left:.32em;opacity:0;
+  text-shadow:0 0 18px rgba(8,120,201,.45)}
+#intro .in-sub{margin:6px 0 0;font-size:clamp(8.5px,2.1vw,11.5px);font-weight:600;letter-spacing:.42em;padding-left:.42em;color:#7fc3a8;opacity:0}
+
+#intro.go{animation:inOut .2s cubic-bezier(.4,0,.2,1) 1.8s forwards}
+#intro.go .in-bg{animation:inFade .4s ease-out forwards}
+#intro.go .in-sweep{animation:inSweep 1.5s cubic-bezier(.45,0,.25,1) .1s forwards}
+#intro.go .in-trc{animation:inLeft .6s cubic-bezier(.2,.8,.2,1) .4s both}
+#intro.go .in-trc .in-plate::after{animation:inShine .55s ease-in-out .75s both}
+#intro.go .in-dewa{animation:inRight .5s cubic-bezier(.2,.8,.2,1) 1s both}
+#intro.go .in-dewa .in-plate::after{animation:inShine .5s ease-in-out 1.25s both}
+#intro.go .in-sep i{animation:inGrowY .45s cubic-bezier(.2,.8,.2,1) .95s forwards}
+#intro.go .in-line{animation:inGrowX .35s cubic-bezier(.2,.8,.2,1) 1.45s forwards}
+#intro.go .in-line::after{animation:inLineSweep .38s ease-in-out 1.6s forwards}
+#intro.go .in-title{animation:inUp .3s cubic-bezier(.2,.8,.2,1) 1.5s forwards}
+#intro.go .in-sub{animation:inUp .3s cubic-bezier(.2,.8,.2,1) 1.6s forwards}
+@keyframes inFade{to{opacity:1}}
+@keyframes inOut{to{opacity:0;transform:scale(1.015)}}
+@keyframes inSweep{0%{opacity:0;left:-60%}25%{opacity:1}100%{opacity:0;left:120%}}
+@keyframes inLeft{from{opacity:0;transform:translateX(-14px) scale(.85)}to{opacity:1;transform:none}}
+@keyframes inRight{from{opacity:0;transform:translateX(14px) scale(.85)}to{opacity:1;transform:none}}
+@keyframes inShine{from{left:-70%}to{left:130%}}
+@keyframes inGrowY{to{transform:scaleY(1)}}
+@keyframes inGrowX{to{transform:scaleX(1)}}
+@keyframes inLineSweep{from{left:-30%}to{left:100%}}
+@keyframes inUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){
+  #intro.go,#intro.go *,#intro.go *::after{animation:none!important}
+  #intro.go .in-bg,#intro.go .in-brand,#intro.go .in-title,#intro.go .in-sub{opacity:1}
+  #intro.go .in-sep i,#intro.go .in-line{transform:none}
+  #intro.go{transition:opacity .3s ease 1s;opacity:0}
+}
+</style>
 <style>
 :root{
   --bg:#0b1220;--panel:#121a2b;--panel2:#18223a;--line:#24314d;--text:#e6ecf5;--mut:#8b9ab4;
@@ -168,6 +234,40 @@ table.t td.r,table.t th.r{text-align:right}
 </style>
 </head>
 <body>
+<div id="intro" aria-hidden="true">
+  <div class="in-bg"></div><div class="in-sweep"></div>
+  <div class="in-stage">
+    <div class="in-logos">
+      <figure class="in-brand in-trc"><div class="in-plate"><img src="img/trc-logo.png" alt="" width="442" height="294"></div>
+        <figcaption>TANVEER AHMED ROAD CONTRACTING LLC</figcaption></figure>
+      <div class="in-sep"><i></i></div>
+      <figure class="in-brand in-dewa"><div class="in-plate"><img src="img/dewa-logo.png" alt="" width="338" height="100"></div>
+        <figcaption>DUBAI ELECTRICITY &amp; WATER AUTHORITY</figcaption></figure>
+    </div>
+    <div class="in-line"></div>
+    <h1 class="in-title">DEWA FIELD APP</h1>
+    <p class="in-sub">POWERING FIELD OPERATIONS</p>
+  </div>
+</div>
+<script>
+/* Launch intro: plays once per app launch (not on reloads in the same session), 2 s,
+   starts when both logos are ready, never holds the app back more than 1.5 s waiting. */
+(function () {
+  var el = document.getElementById('intro');
+  function done() { if (el && el.parentNode) el.parentNode.removeChild(el); el = null; }
+  try { if (sessionStorage.getItem('dewa_intro')) { done(); return; } sessionStorage.setItem('dewa_intro', '1'); } catch (e) {}
+  var rm = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var started = false, imgs = el.querySelectorAll('img'), left = imgs.length;
+  function go() { if (started || !el) return; started = true; el.classList.add('go'); setTimeout(done, rm ? 1300 : 2000); }
+  function ready() { if (--left <= 0) go(); }
+  for (var i = 0; i < imgs.length; i++) {
+    if (imgs[i].complete && imgs[i].naturalWidth) ready();
+    else { imgs[i].onload = ready; imgs[i].onerror = function () { started = true; done(); }; }
+  }
+  setTimeout(function () { if (!started) { started = true; done(); } }, 1500);
+  el.addEventListener('click', done);
+})();
+</script>
 
 <section id="login" class="hidden">
   <div class="brand">DEWA <span>Field App</span></div>
