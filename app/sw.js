@@ -1,6 +1,6 @@
 /* DEWA Field App service worker: network first, cached copy when offline.
    Requests to the Apps Script backend and to Google are never cached. */
-var CACHE = 'dewa-field-v3';
+var CACHE = 'dewa-field-v4';
 var SHELL = [
   './', './index.html', './app.js', './config.js', './manifest.json', './icon-192.png', './icon-512.png',
   './img/trc-logo.png', './img/dewa-logo.png',
